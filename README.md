@@ -1,6 +1,9 @@
-# flake-aspects
+# `<aspect>.<class>` transposition for Dendritic Nix
 
-Tiny nix function and flake-parts-module that transposes an attribute set like:
+<table>
+<tr>
+<td>
+<b><code>flake.aspects</code></b>
 
 ```nix
 {
@@ -16,9 +19,13 @@ Tiny nix function and flake-parts-module that transposes an attribute set like:
   };
 }
 ```
-
-Into
-
+</td>
+<td>
+<img width="300" height="300" alt="Image" src="https://github.com/user-attachments/assets/99eee0ab-f681-49ff-8ce4-4e44e0f32884" />
+</td>
+<td>
+<code>flake.modules</code>
+  
 ```nix
 {
   nixos = {
@@ -31,6 +38,11 @@ Into
   };
 }
 ```
+</td>
+</tr>
+</table>
+
+
 
 ## Motivation
 
