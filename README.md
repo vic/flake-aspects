@@ -4,21 +4,6 @@ Tiny nix function and flake-parts-module that transposes an attribute set like:
 
 ```nix
 {
-  nixos = {
-    foo = ...;
-    bar = ...;
-  };
-  darwin = {
-    bar = ...;
-    baz = ...;
-  };
-}
-```
-
-Into
-
-```nix
-{
   foo = {
     nixos = ...;
   };
@@ -28,6 +13,21 @@ Into
   };
   baz = {
     darwin = ...;
+  };
+}
+```
+
+Into
+
+```nix
+{
+  nixos = {
+    foo = ...;
+    bar = ...;
+  };
+  darwin = {
+    bar = ...;
+    baz = ...;
   };
 }
 ```
