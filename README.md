@@ -19,13 +19,14 @@
   };
 }
 ```
+
 </td>
 <td>
 <img width="300" height="300" alt="Image" src="https://github.com/user-attachments/assets/99eee0ab-f681-49ff-8ce4-4e44e0f32884" />
 </td>
 <td>
 <code>flake.modules</code>
-  
+
 ```nix
 {
   nixos = {
@@ -38,11 +39,10 @@
   };
 }
 ```
+
 </td>
 </tr>
 </table>
-
-
 
 ## Motivation
 
