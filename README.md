@@ -22,7 +22,7 @@
 
 </td>
 <td>
-<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/1423457d-4aca-412e-b401-b979bae9e659" />
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/dd28ce8d-f727-4e31-a192-d3002ee8984e" />
 </td>
 <td>
 <code>flake.modules</code>
