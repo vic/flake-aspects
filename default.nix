@@ -1,5 +1,7 @@
+lib:
 let
   transposeChild = child: parent: value: { inherit child parent value; };
+
   accTransposed =
     acc:
     {
@@ -13,13 +15,11 @@ let
         ${child} = value;
       };
     };
+
+  eachChildAttrs = parent: lib.mapAttrsToList (transposeChild parent);
+  deconstruct = lib.mapAttrsToList eachChildAttrs;
+  reconstruct = lib.foldl accTransposed { };
   transpose =
-    lib:
-    let
-      eachChildAttrs = parent: lib.mapAttrsToList (transposeChild parent);
-      deconstruct = lib.mapAttrsToList eachChildAttrs;
-      reconstruct = lib.foldl accTransposed { };
-    in
     attrs:
     lib.pipe attrs [
       deconstruct
