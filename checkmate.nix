@@ -3,7 +3,7 @@
   perSystem =
     { lib, ... }:
     let
-      transpose = import ./. lib;
+      transpose = import ./. { inherit lib; };
 
       mkFlake =
         mod:
@@ -17,15 +17,32 @@
               ./flakeModule.nix
               inputs.flake-parts.flakeModules.modules
               mod
-              { flake.modules.nixos.tooling.imports = [ toolOpt ]; }
-              { flake.modules.darwin.tooling.imports = [ toolOpt ]; }
+              (fooMod "aspectOne")
+              (fooMod "aspectTwo")
+              (fooMod "aspectThree")
             ];
           };
 
-      toolOpt = {
-        options.tool = lib.mkOption {
+      fooMod = aspect: {
+        imports = [
+          { flake.modules.classOne.${aspect}.imports = [ fooOpt ]; }
+          { flake.modules.classTwo.${aspect}.imports = [ fooOpt ]; }
+          { flake.modules.classThree.${aspect}.imports = [ fooOpt ]; }
+        ];
+      };
+
+      fooOpt = {
+        options.foo = lib.mkOption {
           type = lib.types.string;
           default = "<unset>";
+        };
+        options.bar = lib.mkOption {
+          type = lib.types.listOf lib.types.string;
+          default = [ ];
+        };
+        options.baz = lib.mkOption {
+          type = lib.types.lazyAttrsOf lib.types.string;
+          default = { };
         };
       };
 
@@ -59,23 +76,49 @@
         aspects."test transposes to flake.modules" =
           let
             flake = mkFlake {
-              flake.aspects.tooling = {
-                nixos.tool = "niri";
-                darwin.tool = "paper.spoon";
+              flake.aspects.aspectOne = {
+                classOne.foo = "niri";
+                classTwo.foo = "paper.spoon";
               };
             };
             expr = {
-              nixos = (evalMod "nixos" flake.modules.nixos.tooling);
-              darwin = (evalMod "darwin" flake.modules.darwin.tooling);
+              classOne = (evalMod "classOne" flake.modules.classOne.aspectOne).foo;
+              classTwo = (evalMod "classTwo" flake.modules.classTwo.aspectOne).foo;
             };
             expected = {
-              nixos.tool = "niri";
-              darwin.tool = "paper.spoon";
+              classOne = "niri";
+              classTwo = "paper.spoon";
             };
           in
           {
             inherit expr expected;
           };
+
+        aspects."test providers" =
+          let
+            flake = mkFlake ({
+              flake.aspects =
+                { config, ... }:
+                {
+                  aspectOne = {
+                    description = "os config";
+                    require = with config; [ aspectTwo.provide.default ];
+                    classOne.foo = lib.mkDefault "os";
+                  };
+
+                  aspectTwo = {
+                    description = "user config at os level";
+                    classOne.foo = "user";
+                  };
+                };
+            });
+            expr = (evalMod "classOne" flake.modules.classOne.aspectOne).foo;
+            expected = "user";
+          in
+          {
+            inherit expr expected;
+          };
       };
+
     };
 }
