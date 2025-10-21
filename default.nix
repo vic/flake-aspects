@@ -1,21 +1,14 @@
 lib:
 let
   transposeChild = child: parent: value: { inherit child parent value; };
-
   accTransposed =
-    acc:
-    {
-      parent,
-      child,
-      value,
-    }:
+    acc: item:
     acc
     // {
-      ${parent} = (acc.${parent} or { }) // {
-        ${child} = value;
+      ${item.parent} = (acc.${item.parent} or { }) // {
+        ${item.child} = item.value;
       };
     };
-
   eachChildAttrs = parent: lib.mapAttrsToList (transposeChild parent);
   deconstruct = lib.mapAttrsToList eachChildAttrs;
   reconstruct = lib.foldl accTransposed { };
