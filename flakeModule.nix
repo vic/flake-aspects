@@ -60,6 +60,7 @@ let
 in
 {
   options.flake.aspects = lib.mkOption {
+    default = { };
     description = ''
       Attribute set of `<aspect>.<class>` modules.
 

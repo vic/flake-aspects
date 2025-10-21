@@ -73,6 +73,28 @@
           };
         };
 
+        aspects."test provides default" =
+          let
+            flake =
+              inputs.flake-parts.lib.mkFlake
+                {
+                  inputs.self = [ ];
+                  moduleLocation = builtins.toString ./.;
+                }
+                {
+                  systems = [ ];
+                  imports = [
+                    ./flakeModule.nix
+                    inputs.flake-parts.flakeModules.modules
+                  ];
+                };
+            expr = flake.modules;
+            expected = { };
+          in
+          {
+            inherit expr expected;
+          };
+
         aspects."test transposes to flake.modules" =
           let
             flake = mkFlake {
