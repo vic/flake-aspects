@@ -1,6 +1,11 @@
-lib:
+{
+  lib,
+  emit ? lib.singleton,
+}:
 let
-  transposeChild = child: parent: value: { inherit child parent value; };
+  transposeItem =
+    child: parent: value:
+    emit { inherit child parent value; };
   accTransposed =
     acc: item:
     acc
@@ -9,8 +14,8 @@ let
         ${item.child} = item.value;
       };
     };
-  eachChildAttrs = parent: lib.mapAttrsToList (transposeChild parent);
-  deconstruct = lib.mapAttrsToList eachChildAttrs;
+  transposeItems = parent: lib.mapAttrsToList (transposeItem parent);
+  deconstruct = lib.mapAttrsToList transposeItems;
   reconstruct = lib.foldl accTransposed { };
   transpose =
     attrs:
