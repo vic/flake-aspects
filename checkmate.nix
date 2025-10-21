@@ -124,18 +124,21 @@
                 {
                   aspectOne = {
                     description = "os config";
-                    require = with config; [ aspectTwo.provide.default ];
-                    classOne.foo = lib.mkDefault "os";
+                    requires = with config; [ aspectTwo ];
+                    classOne.bar = [ "os" ];
                   };
 
                   aspectTwo = {
                     description = "user config at os level";
-                    classOne.foo = "user";
+                    classOne.bar = [ "user" ];
                   };
                 };
             });
-            expr = (evalMod "classOne" flake.modules.classOne.aspectOne).foo;
-            expected = "user";
+            expr = lib.sort (a: b: a < b) (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
+            expected = [
+              "os"
+              "user"
+            ];
           in
           {
             inherit expr expected;

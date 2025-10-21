@@ -64,7 +64,7 @@ However, for humans, it might be more intuitive to use a transposed attrset `<as
 As a deps-free library from `./default.nix`:
 
 ```nix
-let transpose = import ./default.nix lib; in
+let transpose = import ./default.nix { lib = pkgs.lib; }; in
 transpose { a.b.c = 1; } # => { b.a.c = 1; }
 ```
 

@@ -1,62 +1,76 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  ...
+}:
 let
-  flakeModules =
+  aspects = config.flake.aspects;
+
+  transpose = import ./. { inherit lib emit; };
+  emit = transposed: [
+    {
+      inherit (transposed) parent child;
+      value = aspectModule aspects.${transposed.child} transposed.parent;
+    }
+  ];
+
+  aspectModule =
+    aspect: class:
     let
-      aspects = config.flake.aspects;
-      transpose = import ./. { inherit lib emit; };
-      require =
-        fromAspect: class: f:
-        (f fromAspect).${class} or { };
-      emit =
-        transposed:
-        let
-          class = transposed.parent;
-          aspect = transposed.child;
-          required.imports = lib.map (require aspect class) aspects.${aspect}.require;
-          item = {
-            inherit (transposed) parent child;
-            value.imports = [
-              transposed.value
-              required
-            ];
-          };
-        in
-        [
-          item
-        ];
+      require = f: aspectModule (f (aspect // { inherit class; })) class;
+      module.imports = lib.flatten [
+        (aspect.${class} or { })
+        (lib.map require aspect.requires)
+      ];
     in
-    transpose aspects;
+    module;
+
+  providerType = lib.types.functionTo aspectSubmoduleType;
 
   aspectSubmoduleType = lib.types.submodule (
     { name, config, ... }:
     {
       freeformType = lib.types.lazyAttrsOf lib.types.deferredModule;
+      options.name = lib.mkOption {
+        readOnly = true;
+        description = "Aspect name";
+        default = name;
+        type = lib.types.str;
+      };
       options.description = lib.mkOption {
         description = "Aspect description";
         default = "Aspect ${name}";
         type = lib.types.str;
       };
-      options.require = lib.mkOption {
+      options.requires = lib.mkOption {
         description = "Providers to ask aspects from";
         type = lib.types.listOf providerType;
         default = [ ];
       };
-      options.provide = lib.mkOption {
-        description = "Providers for ${name} aspect";
+      options.provides = lib.mkOption {
+        description = "Providers of aspect for other aspects";
         default = { };
         type = lib.types.submodule {
           freeformType = lib.types.lazyAttrsOf providerType;
-          options.default = lib.mkOption {
-            description = "Provider of ${name} aspect";
+          options.itself = lib.mkOption {
+            readOnly = true;
+            description = "Provides itself";
             type = providerType;
             default = _: config;
           };
         };
       };
+      options.__functor = lib.mkOption {
+        internal = true;
+        readOnly = true;
+        visible = false;
+        description = "Functor to default provider";
+        type = lib.types.unspecified;
+        default = _: config.provides.itself;
+      };
     }
   );
 
-  providerType = lib.types.functionTo aspectSubmoduleType;
 in
 {
   options.flake.aspects = lib.mkOption {
@@ -70,5 +84,5 @@ in
       freeformType = lib.types.lazyAttrsOf aspectSubmoduleType;
     };
   };
-  config.flake.modules = flakeModules;
+  config.flake.modules = transpose aspects;
 }
