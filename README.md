@@ -7,12 +7,13 @@
   <a href="LICENSE"> <img src="https://img.shields.io/github/license/vic/flake-aspects" alt="License"/> </a>
 </p>
 
-# `<aspect>.<class>` transposition for Dendritic Nix
+# `<aspect>.<class>` Transposition for Dendritic Nix
 
-On [aspect oriented](https://vic.github.io/dendrix/Dendritic.html) [Dendritic](https://github.com/mightyiam/dendritic) setups, it is common to expose modules using `flake.modules.<class>.<aspect>`.
-However, for humans, it might be more intuitive to use a transposed attrset `<aspect>.<class>`. Because it feels more natural to nest classes inside aspects than the other way around.
+In [aspect-oriented](https://vic.github.io/dendrix/Dendritic.html) [Dendritic](https://github.com/mightyiam/dendritic) setups, it is common to expose modules using the structure `flake.modules.<class>.<aspect>`.
 
-This project provides a [`transpose`](default.nix) primitive, small and powerful enough to implement [cross-aspect dependencies](aspects.nix) for *any* nix configuration class, and a [flake-parts module](flakeModule.nix) for turning `flake.aspects` into `flake.modules`.
+However, for many users, a transposed attribute set, `<aspect>.<class>`, can be more intuitive. It often feels more natural to nest classes within aspects rather than the other way around.
+
+This project provides a small, dependency-free [`transpose`](default.nix) primitive that is powerful enough to implement [cross-aspect dependencies](aspects.nix) for any Nix configuration class. It also includes a [flake-parts module](flakeModule.nix) that transforms `flake.aspects` into `flake.modules`.
 
 <table>
 <tr>
@@ -72,87 +73,77 @@ This project provides a [`transpose`](default.nix) primitive, small and powerful
 </tr>
 </table>
 
-## Usage
+## Usage ⚙️
 
-### As a deps-free library from `./default.nix`:
+### As a Dependency-Free Library (`./default.nix`) 📚
 
-Our [`transpose`](default.nix) library takes an optional `emit` function that
-can be used to ignore some items, modify them or produce many other items on its place.
+The [`transpose`](default.nix) library accepts an optional `emit` function that can be used to ignore items, modify them, or generate multiple items from a single input.
 
 ```nix
 let transpose = import ./default.nix { lib = pkgs.lib; }; in
 transpose { a.b.c = 1; } # => { b.a.c = 1; }
 ```
 
-This `emit` function is used by our [`aspects`](aspects.nix) library
-(both libs are flakes-independent) to provide cross-aspects same-class module dependencies.
+This `emit` function is utilized by the [`aspects`](aspects.nix) library (both libraries are independent of flakes) to manage cross-aspect, same-class module dependencies.
 
-### As a *Dendritic* flake-parts module that provides the `flake.aspects` option:
+### As a Dendritic Flake-Parts Module (`flake.aspects` option) 🧩
 
-> `flake.aspects` transposes into `flake.modules`.
+The `flake.aspects` option is transposed into `flake.modules`.
 
 ```nix
-# code in this example can (and should) be split into different dendritic modules.
+# The code in this example can (and should) be split into different Dendritic modules.
 { inputs, ... }: {
   imports = [ inputs.flake-aspects.flakeModule ];
   flake.aspects = {
 
     sliding-desktop = {
-      description = "nextgen tiling windowing";
-      nixos  = { }; # configure Niri on Linux
-      darwin = { }; # configure Paneru on MacOS
+      description = "Next-generation tiling windowing";
+      nixos  = { }; # Configure Niri on Linux
+      darwin = { }; # Configure Paneru on macOS
     };
 
-
     awesome-cli = {
-      description = "enhances environment with best of cli an tui";
-      nixos  = { }; # os services
-      darwin = { }; # apps like ghostty, iterm2
-      homeManager = { }; # fish aliases, tuis, etc.
-      nixvim = { }; # plugins
+      description = "Enhances the environment with the best of CLI and TUI";
+      nixos  = { };       # OS services
+      darwin = { };       # Apps like ghostty, iTerm2
+      homeManager = { };  # Fish aliases, TUIs, etc.
+      nixvim = { };       # Plugins
     };
 
     work-network = {
-      description = "work vpn and ssh access.";
-      nixos = {};  # enable openssh
-      darwin = {}; # enable MacOS ssh server
-      terranix = {}; # provision vpn
-      hjem = {}; # home link .ssh keys and configs.
-    }
+      description = "Work VPN and SSH access";
+      nixos = {};    # Enable OpenSSH
+      darwin = {};   # Enable macOS SSH server
+      terranix = {}; # Provision VPN
+      hjem = {};     # Home: link .ssh keys and configs
+    };
 
   };
 }
 ```
 
-#### Declaring cross-aspect dependencies
+#### Declaring Cross-Aspect Dependencies 🔗
 
-`flake.aspects` also allow **aspects** to declare dependencies between them.
+`flake.aspects` also allows aspects to declare dependencies among themselves.
 
-Of course each module can have its own `imports`, however aspect requirements
-are aspect-level instead of module-level. Dependencies will ultimately resolve to
-modules and get imported only when they exist.
+Each module can have its own `imports`, but aspect requirements are defined at the aspect level, not the module level. Dependencies are eventually resolved to modules and are imported only if they exist.
 
-In the following example, our `development-server` aspect can be applied into
-linux and macos hosts.
-Note that `alice` prefers to use `nixos`+`homeManager`, while `bob` likes `darwin`+`hjem`.
+In the example below, the `development-server` aspect can be applied to both Linux and macOS hosts. Note that `alice` uses `nixos` + `homeManager`, while `bob` uses `darwin` + `hjem`.
 
-The `development-server` aspect is a "_usability concern_", it configures the exact same
-development environment on two different OS.
-When applied to a NixOS machine, the `alice.nixos` module will likely
-configure the alice user, but there is no nixos user for `bob`.
+The `development-server` aspect addresses a usability concern by configuring the same development environment on different operating systems. When applied to a NixOS machine, the `alice.nixos` module will likely configure the `alice` user; there is no corresponding NixOS user for `bob`.
 
 ```nix
 {
-  flake.aspects = {config, ...}: {
+  flake.aspects = { config, ... }: {
     development-server = {
       requires = with config; [ alice bob ];
 
-      # without flake-aspects, you'd normally do:
+      # Without flake-aspects, you would normally do:
       # nixos.imports  = [ inputs.self.modules.nixos.alice ];
       # darwin.imports = [ inputs.self.modules.darwin.bob ];
     };
 
-    alice = { 
+    alice = {
       nixos = {};
     };
 
@@ -163,8 +154,7 @@ configure the alice user, but there is no nixos user for `bob`.
 }
 ```
 
-It is out of scope for this library to create OS configurations.
-As you might have guessed, exposing configurations would look like this:
+Creating OS configurations is outside the scope of this library. Exposing configurations might look like this:
 
 ```nix
 { inputs, ... }:
@@ -175,61 +165,51 @@ As you might have guessed, exposing configurations would look like this:
   };
 
   flake.darwinConfigurations.fooHost = inputs.darwin.lib.darwinSystem {
-    system = "aarm64-darwin";
+    system = "aarch64-darwin";
     modules = [ inputs.self.modules.darwin.development-server ];
   };
 }
 ```
 
-#### Advanced aspect dependencies.
+#### Advanced Aspect Dependencies 🧭
 
-You have already seen that an `aspect` can have a `requires` list:
+An aspect can declare a `requires` list:
 
 ```nix
-# A foo aspect that depends on aspects bar and baz.
+# A 'foo' aspect that depends on 'bar' and 'baz' aspects.
 flake.aspects = { config, ... }: {
   foo.requires = [ config.bar config.baz ];
 }
 ```
 
-cross-aspect requirements work like this:
+Cross-aspect requirements work as follows:
 
-When a module `flake.modules.nixos.foo` is requested (eg, included in a nixosConfiguration),
-a corresponding module will be computed from `flake.aspects.foo.nixos`.
+When a module like `flake.modules.nixos.foo` is requested (for example, included in a `nixosConfiguration`), a corresponding module is computed from `flake.aspects.foo.nixos`.
 
-`flake.aspects.foo.requires` is a list of functions (**providers**)
-that will be called with `{aspect = "foo"; class = "nixos"}` to obtain another aspect
-providing a module having the same `class` (`nixos` in our example).
+`flake.aspects.foo.requires` is a list of functions (providers) that are called with `{ aspect = "foo"; class = "nixos" }`. These providers return another aspect that provides a module of the same `class` (in this case, `nixos`).
 
-_providers_ are a way of asking: if I have a (`foo`, `nixos`) module what other
-aspects can you provide that have `nixos` modules to be imported in `foo`.
+Providers answer the question: given a (`foo`, `nixos`) module, what other aspects can provide `nixos` modules to be imported into `foo`?
 
-> This way, it is aspects *being included* who decide what configuration must
-> be used by its caller aspect.
+This means that the included aspect determines which configuration its caller should use.
 
-by default, all aspects have a `<aspect>.provides.itself` function that ignores its argument
-and always returns the `<aspect>` itself.
-This is why you can use the `with config; [ bar baz ]` syntax.
-They are actually `[ config.bar.provides.itself  config.baz.provides.itself ]`.
+By default, all aspects include a `<aspect>.provides.itself` function that ignores its argument and returns the `<aspect>` itself. This is why `with config; [ bar baz ]` works: it is shorthand for `[ config.bar.provides.itself config.baz.provides.itself ]`.
 
-but you can also define custom providers that can inspect the argument's `aspect` and `class`
-and return some set of modules accordingly. you can also use this feature to have aspects that
-like as proxy/routers of dependencies.
+You can also define custom providers that inspect the `aspect` and `class` arguments and return a set of modules accordingly. This allows aspects to act as proxies or routers for dependencies.
 
 ```nix
-flake.aspects.alice.provides.os-user = { aspect, class }: 
-if someCondition aspect && class == "nixos" then { nixos = { ... }; } else { }
+flake.aspects.alice.provides.os-user = { aspect, class }:
+  if someCondition aspect && class == "nixos" then { nixos = { ... }; } else { };
 ```
 
-the `os-user` provider can be now included in a `requires` list:
+The `os-user` provider can then be included in a `requires` list:
 
 ```nix
-flake.aspects = {config, ...}: {
+flake.aspects = { config, ... }: {
   home-server.requires = [ config.alice.provides.os-user ];
 }
 ```
 
-## Testing
+## Testing ✅
 
 ```shell
 nix run ./checkmate#fmt --override-input target .
