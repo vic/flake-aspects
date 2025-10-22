@@ -38,7 +38,7 @@ let
         type = lib.types.submodule (
           { config, ... }:
           {
-            freeformType = lib.types.lazyAttrsOf providerType;
+            freeformType = lib.types.lazyAttrsOf (lib.types.functionTo lib.types.unspecified);
             config._module.args.provides = config;
             options.itself = lib.mkOption {
               readOnly = true;

@@ -194,18 +194,41 @@ This means that the included aspect determines which configuration its caller sh
 
 By default, all aspects have a `<aspect>.provides.itself` provider function that ignores its argument and returns the `<aspect>` itself. This is why `with aspects; [ bar baz ]` works: it is shorthand for `[ aspects.bar.provides.itself aspects.baz.provides.itself ]`.
 
+##### Dynamic modules using provider function's `{ aspect-chain, class }` argument.
+
 You can also define custom providers that inspect the `aspect-chain` and `class` arguments and return a set of modules accordingly. This allows providers to act as proxies or routers for dependencies.
 
 ```nix
-flake.aspects.alice.provides.os-user = { aspect-chain, class }:
+flake.aspects.kde-desktop.provides.karousel = { aspect-chain, class }:
   if someCondition aspect-chain && class == "nixos" then { nixos = { ... }; } else { };
 ```
 
-The `os-user` provider can then be included in a `includes` list:
+The `karousel` provider can then be included in another aspect:
 
 ```nix
 flake.aspects = { aspects, ... }: {
-  home-server.includes = [ aspects.alice.provides.os-user ];
+  home-server.includes = [ aspects.kde-desktop.provides.karousel ];
+}
+```
+
+##### Parametrized modules from providers.
+
+Providers can be curried like any function, this way you can provide parametrized modules.
+
+```nix
+flake.aspects = { aspects, ... }: {
+  system = {
+    nixos.system.stateVersion = "25.11";
+    provides.user = userName: { aspect-chain, class }: {
+      darwin.system.primaryUser = userName;
+      nixos.users.${userName}.isNormalUser = true;
+    }
+  };
+
+  home-server.includes = [
+    aspects.system
+    (aspects.system.provides.user "bob")
+  ];
 }
 ```
 
