@@ -186,19 +186,19 @@ Cross-aspect dependencies work as follows:
 
 When a module like `flake.modules.nixos.foo` is requested (for example, included in a `nixosConfiguration`), a corresponding module is computed from `flake.aspects.foo.nixos`.
 
-`flake.aspects.foo.includes` is a list of functions (providers) that are called with `{ aspect = "foo"; class = "nixos" }`. These providers return another aspect that provides a module of the same `class` (in this case, `nixos`).
+`flake.aspects.foo.includes` is a list of functions (providers) that are called with `{ aspect-chain = ["foo"]; class = "nixos" }`. These providers return another aspect that provides a module of the same `class` (in this case, `nixos`).
 
-Providers answer the question: given a (`foo`, `nixos`) module, what other aspects can provide `nixos` modules to be imported into `foo`?
+Providers answer the question: given we have `nixos` modules from `[foo]` aspects, what other aspects can provide `nixos` modules that need to be imported?
 
 This means that the included aspect determines which configuration its caller should use.
 
 By default, all aspects have a `<aspect>.provides.itself` provider function that ignores its argument and returns the `<aspect>` itself. This is why `with aspects; [ bar baz ]` works: it is shorthand for `[ aspects.bar.provides.itself aspects.baz.provides.itself ]`.
 
-You can also define custom providers that inspect the `aspect` and `class` arguments and return a set of modules accordingly. This allows providers to act as proxies or routers for dependencies.
+You can also define custom providers that inspect the `aspect-chain` and `class` arguments and return a set of modules accordingly. This allows providers to act as proxies or routers for dependencies.
 
 ```nix
-flake.aspects.alice.provides.os-user = { aspect, class }:
-  if someCondition aspect && class == "nixos" then { nixos = { ... }; } else { };
+flake.aspects.alice.provides.os-user = { aspect-chain, class }:
+  if someCondition aspect-chain && class == "nixos" then { nixos = { ... }; } else { };
 ```
 
 The `os-user` provider can then be included in a `includes` list:
@@ -208,6 +208,8 @@ flake.aspects = { aspects, ... }: {
   home-server.includes = [ aspects.alice.provides.os-user ];
 }
 ```
+
+See `aspects."test provides"` [checkmate tests](checkmate.nix) for more examples on chained providers.
 
 ## Testing
 

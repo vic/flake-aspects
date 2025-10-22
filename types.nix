@@ -12,7 +12,6 @@ let
     {
       freeformType = lib.types.lazyAttrsOf lib.types.deferredModule;
       options.name = lib.mkOption {
-        readOnly = true;
         description = "Aspect name";
         default = name;
         type = lib.types.str;
@@ -42,10 +41,9 @@ let
       };
       options.__functor = lib.mkOption {
         internal = true;
-        readOnly = true;
         visible = false;
         description = "Functor to default provider";
-        type = lib.types.unspecified;
+        type = lib.types.functionTo lib.types.unspecified;
         default = _: config.provides.itself;
       };
     }

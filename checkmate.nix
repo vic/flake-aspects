@@ -144,7 +144,7 @@
             inherit expr expected;
           };
 
-        aspects."test provider arguments" =
+        aspects."test provides" =
           let
             flake = mkFlake ({
               flake.aspects =
@@ -154,14 +154,17 @@
                     foo
                     bar
                   ];
-                  aspectOne.classOne = { }; # included for mixing dependencies.
+                  aspectOne.classOne = { }; # must be present for mixing dependencies.
                   aspectTwo = {
                     classOne.bar = [ "class one not included" ];
                     classTwo.bar = [ "class two not included" ];
                     provides.foo =
-                      { class, aspect }:
+                      { class, aspect-chain }:
                       {
-                        classOne.bar = [ "foo:${aspect}:${class}" ];
+                        name = "aspectTwo.foo";
+                        description = "aspectTwo foo provided";
+                        includes = [ aspects.aspectThree.provides.moo ];
+                        classOne.bar = [ "two:${class}:${lib.concatStringsSep "/" aspect-chain}" ];
                         classTwo.bar = [ "foo class two not included" ];
                       };
                     provides.bar = _: {
@@ -169,11 +172,17 @@
                       classTwo.bar = [ "bar class two not included" ];
                     };
                   };
+                  aspectThree.provides.moo =
+                    { aspect-chain, class }:
+                    {
+                      classOne.bar = [ "three:${class}:${lib.concatStringsSep "/" aspect-chain}" ];
+                    };
                 };
             });
             expr = lib.sort (a: b: a < b) (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
             expected = [
-              "foo:aspectOne:classOne"
+              "three:classOne:aspectOne/aspectTwo.foo"
+              "two:classOne:aspectOne"
             ];
           in
           {

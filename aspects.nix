@@ -4,23 +4,24 @@ let
   emit = transposed: [
     {
       inherit (transposed) parent child;
-      value = aspectModule transposed.child transposed.parent aspects.${transposed.child};
+      value = aspectModule [ transposed.child ] transposed.parent aspects.${transposed.child};
     }
   ];
 
   include =
-    aspect: class: f:
+    aspect-chain: class: f:
     let
-      asp = f { inherit aspect class; };
+      asp = f { inherit aspect-chain class; };
+      new-chain = aspect-chain ++ [ asp.name ];
     in
-    aspectModule asp.name class asp;
+    aspectModule new-chain class asp;
 
   aspectModule =
-    aspect: class: asp:
+    aspect-chain: class: asp:
     let
       module.imports = lib.flatten [
         (asp.${class} or { })
-        (lib.map (include aspect class) asp.includes)
+        (lib.map (include aspect-chain class) asp.includes)
       ];
     in
     module;
