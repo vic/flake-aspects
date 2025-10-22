@@ -192,7 +192,8 @@ Providers answer the question: given a (`foo`, `nixos`) module, what other aspec
 
 This means that the included aspect determines which configuration its caller should use.
 
-By default, all aspects include a `<aspect>.provides.itself` function that ignores its argument and returns the `<aspect>` itself. This is why `with config; [ bar baz ]` works: it is shorthand for `[ config.bar.provides.itself config.baz.provides.itself ]`.
+By default, all aspects have an `<aspect>.provides.itself` function that ignores its argument and returns the `<aspect>` itself. This is why `with config; [ bar baz ]` works: it is shorthand for
+`[ config.bar.provides.itself config.baz.provides.itself ]`.
 
 You can also define custom providers that inspect the `aspect` and `class` arguments and return a set of modules accordingly. This allows aspects to act as proxies or routers for dependencies.
 
