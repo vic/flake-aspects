@@ -118,7 +118,7 @@
 
         aspects."test dependencies on aspects" =
           let
-            flake = mkFlake ({
+            flake = mkFlake {
               flake.aspects =
                 { aspects, ... }:
                 {
@@ -133,7 +133,7 @@
                     classOne.bar = [ "user" ];
                   };
                 };
-            });
+            };
             expr = lib.sort (a: b: a < b) (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
             expected = [
               "os"
@@ -146,7 +146,7 @@
 
         aspects."test provides" =
           let
-            flake = mkFlake ({
+            flake = mkFlake {
               flake.aspects =
                 { aspects, ... }:
                 {
@@ -178,11 +178,62 @@
                       classOne.bar = [ "three:${class}:${lib.concatStringsSep "/" aspect-chain}" ];
                     };
                 };
-            });
+            };
             expr = lib.sort (a: b: a < b) (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
             expected = [
               "three:classOne:aspectOne/aspectTwo.foo"
               "two:classOne:aspectOne"
+            ];
+          in
+          {
+            inherit expr expected;
+          };
+
+        aspects."test provides using fixpoints" =
+          let
+            flake = mkFlake {
+              flake.aspects =
+                { aspects, ... }:
+                {
+                  aspectOne = {
+                    classOne.bar = [ "1" ];
+                    includes = [
+                      aspects.aspectTwo
+                    ];
+                  };
+
+                  aspectTwo =
+                    { aspect, ... }:
+                    {
+                      classOne.bar = [ "2" ];
+                      includes = [ aspect.provides.three-and-four-and-five ];
+                      provides =
+                        { provides, ... }:
+                        {
+                          three-and-four-and-five = _: {
+                            classOne.bar = [ "3" ];
+                            includes = [
+                              provides.four
+                              aspects.five
+                            ];
+                          };
+                          four = _: {
+                            classOne.bar = [ "4" ];
+                          };
+                        };
+                    };
+
+                  five.classOne.bar = [ "5" ];
+                };
+            };
+
+            expr = lib.sort (a: b: a < b) (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
+            expected = [
+              "1"
+              "2"
+              "3"
+              "4"
+              "5"
             ];
           in
           {

@@ -8,9 +8,15 @@ let
   providerType = lib.types.functionTo aspectSubmoduleType;
 
   aspectSubmoduleType = lib.types.submodule (
-    { name, config, ... }:
+    {
+      name,
+      aspect,
+      config,
+      ...
+    }:
     {
       freeformType = lib.types.lazyAttrsOf lib.types.deferredModule;
+      config._module.args.aspect = config;
       options.name = lib.mkOption {
         description = "Aspect name";
         default = name;
@@ -29,22 +35,26 @@ let
       options.provides = lib.mkOption {
         description = "Providers of aspect for other aspects";
         default = { };
-        type = lib.types.submodule {
-          freeformType = lib.types.lazyAttrsOf providerType;
-          options.itself = lib.mkOption {
-            readOnly = true;
-            description = "Provides itself";
-            type = providerType;
-            default = _: config;
-          };
-        };
+        type = lib.types.submodule (
+          { config, ... }:
+          {
+            freeformType = lib.types.lazyAttrsOf providerType;
+            config._module.args.provides = config;
+            options.itself = lib.mkOption {
+              readOnly = true;
+              description = "Provides itself";
+              type = providerType;
+              default = _: aspect;
+            };
+          }
+        );
       };
       options.__functor = lib.mkOption {
         internal = true;
         visible = false;
         description = "Functor to default provider";
         type = lib.types.functionTo lib.types.unspecified;
-        default = _: config.provides.itself;
+        default = _: aspect.provides.itself;
       };
     }
   );
