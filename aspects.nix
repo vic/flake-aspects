@@ -11,7 +11,12 @@ let
   aspectModule =
     aspect: class:
     let
-      require = f: aspectModule (f (aspect // { inherit class; })) class;
+      require =
+        f:
+        aspectModule (f {
+          aspect = aspect.name;
+          inherit class;
+        }) class;
       module.imports = lib.flatten [
         (aspect.${class} or { })
         (lib.map require aspect.requires)

@@ -12,7 +12,7 @@
 On [aspect oriented](https://vic.github.io/dendrix/Dendritic.html) [Dendritic](https://github.com/mightyiam/dendritic) setups, it is common to expose modules using `flake.modules.<class>.<aspect>`.
 However, for humans, it might be more intuitive to use a transposed attrset `<aspect>.<class>`. Because it feels more natural to nest classes inside aspects than the other way around.
 
-This project provides a [`transpose`](tree/main/default.nix) primitive, small and powerful enough to implement [cross-aspect dependencies](tree/main/aspects.nix) for *any* nix configuration class, and a [flake-parts module](./tree/main/flakeModule.nix) for turning `flake.aspects` into `flake.modules`.
+This project provides a [`transpose`](default.nix) primitive, small and powerful enough to implement [cross-aspect dependencies](aspects.nix) for *any* nix configuration class, and a [flake-parts module](flakeModule.nix) for turning `flake.aspects` into `flake.modules`.
 
 <table>
 <tr>
@@ -76,7 +76,7 @@ This project provides a [`transpose`](tree/main/default.nix) primitive, small an
 
 ### As a deps-free library from `./default.nix`:
 
-Our [`transpose`](tree/main/default.nix) library takes an optional `emit` function that
+Our [`transpose`](default.nix) library takes an optional `emit` function that
 can be used to ignore some items, modify them or produce many other items on its place.
 
 ```nix
@@ -84,7 +84,7 @@ let transpose = import ./default.nix { lib = pkgs.lib; }; in
 transpose { a.b.c = 1; } # => { b.a.c = 1; }
 ```
 
-This `emit` function is used by our [`aspects`](tree/main/aspects.nix) library
+This `emit` function is used by our [`aspects`](aspects.nix) library
 (both libs are flakes-independent) to provide cross-aspects same-class module dependencies.
 
 ### As a *Dendritic* flake-parts module that provides the `flake.aspects` option:
@@ -126,7 +126,7 @@ This `emit` function is used by our [`aspects`](tree/main/aspects.nix) library
 
 #### Declaring cross-aspect dependencies
 
-`flake.aspects` also allow to dependencies between aspects.
+`flake.aspects` also allow **aspects** to declare dependencies between them.
 
 Of course each module can have its own `imports`, however aspect requirements
 are aspect-level instead of module-level. Dependencies will ultimately resolve to
@@ -136,9 +136,9 @@ In the following example, our `development-server` aspect can be applied into
 linux and macos hosts.
 Note that `alice` prefers to use `nixos`+`homeManager`, while `bob` likes `darwin`+`hjem`.
 
-The `development-server` is a "usability concern", that configures the exact same
-development tools on two different OS.
-When it is applied to a NixOS machine, the `alice.nixos` module will likely
+The `development-server` aspect is a "_usability concern_", it configures the exact same
+development environment on two different OS.
+When applied to a NixOS machine, the `alice.nixos` module will likely
 configure the alice user, but there is no nixos user for `bob`.
 
 ```nix
@@ -197,8 +197,8 @@ cross-aspect requirements work like this:
 When a module `flake.modules.nixos.foo` is requested (eg, included in a nixosConfiguration),
 a corresponding module will be computed from `flake.aspects.foo.nixos`.
 
-`flake.aspects.foo.requires` is a list of functions (named **providers**)
-that will be called with `{name = "foo"; class = "nixos"}` to obtain another aspect
+`flake.aspects.foo.requires` is a list of functions (**providers**)
+that will be called with `{aspect = "foo"; class = "nixos"}` to obtain another aspect
 providing a module having the same `class` (`nixos` in our example).
 
 _providers_ are a way of asking: if I have a (`foo`, `nixos`) module what other
@@ -212,12 +212,12 @@ and always returns the `<aspect>` itself.
 This is why you can use the `with config; [ bar baz ]` syntax.
 They are actually `[ config.bar.provides.itself  config.baz.provides.itself ]`.
 
-but you can also define custom providers that can inspect the argument's `name` and `class`
+but you can also define custom providers that can inspect the argument's `aspect` and `class`
 and return some another aspect accordingly.
 
 ```nix
-flake.aspects.alice.provides.os-user = { name, class, ... }: {
-  # perhaps regexp matching on name or class. eg, match all "hosts" aspects.
+flake.aspects.alice.provides.os-user = { aspect, class, ... }: {
+  # perhaps regexp matching on aspect or class. eg, match all "hosts" aspects.
   nixos = { };
 }
 ```
