@@ -4,22 +4,23 @@ let
   emit = transposed: [
     {
       inherit (transposed) parent child;
-      value = aspectModule aspects.${transposed.child} transposed.parent;
+      value = aspectModule transposed.child transposed.parent aspects.${transposed.child};
     }
   ];
 
-  aspectModule =
-    aspect: class:
+  include =
+    aspect: class: f:
     let
-      require =
-        f:
-        aspectModule (f {
-          aspect = aspect.name;
-          inherit class;
-        }) class;
+      asp = f { inherit aspect class; };
+    in
+    aspectModule asp.name class asp;
+
+  aspectModule =
+    aspect: class: asp:
+    let
       module.imports = lib.flatten [
-        (aspect.${class} or { })
-        (lib.map require aspect.requires)
+        (asp.${class} or { })
+        (lib.map (include aspect class) asp.includes)
       ];
     in
     module;
