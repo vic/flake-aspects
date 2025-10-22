@@ -116,7 +116,7 @@
             inherit expr expected;
           };
 
-        aspects."test providers" =
+        aspects."test requirements on aspects" =
           let
             flake = mkFlake ({
               flake.aspects =
@@ -138,6 +138,42 @@
             expected = [
               "os"
               "user"
+            ];
+          in
+          {
+            inherit expr expected;
+          };
+
+        aspects."test provider arguments" =
+          let
+            flake = mkFlake ({
+              flake.aspects =
+                { config, ... }:
+                {
+                  aspectOne.requires = with config.aspectTwo.provides; [
+                    foo
+                    bar
+                  ];
+                  aspectOne.classOne = { }; # required for mixing dependencies.
+                  aspectTwo = {
+                    classOne.bar = [ "class one not included" ];
+                    classTwo.bar = [ "class two not included" ];
+                    provides.foo =
+                      { class, aspect }:
+                      {
+                        classOne.bar = [ "foo:${aspect}:${class}" ];
+                        classTwo.bar = [ "foo class two not included" ];
+                      };
+                    provides.bar = _: {
+                      # classOne is missing on bar
+                      classTwo.bar = [ "bar class two not included" ];
+                    };
+                  };
+                };
+            });
+            expr = lib.sort (a: b: a < b) (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
+            expected = [
+              "foo:aspectOne:classOne"
             ];
           in
           {

@@ -213,13 +213,12 @@ This is why you can use the `with config; [ bar baz ]` syntax.
 They are actually `[ config.bar.provides.itself  config.baz.provides.itself ]`.
 
 but you can also define custom providers that can inspect the argument's `aspect` and `class`
-and return some another aspect accordingly.
+and return some set of modules accordingly. you can also use this feature to have aspects that
+like as proxy/routers of dependencies.
 
 ```nix
-flake.aspects.alice.provides.os-user = { aspect, class, ... }: {
-  # perhaps regexp matching on aspect or class. eg, match all "hosts" aspects.
-  nixos = { };
-}
+flake.aspects.alice.provides.os-user = { aspect, class }: 
+if someCondition aspect && class == "nixos" then { nixos = { ... }; } else { }
 ```
 
 the `os-user` provider can be now included in a `requires` list:
