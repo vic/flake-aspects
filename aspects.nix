@@ -9,22 +9,19 @@ let
   ];
 
   include =
-    aspect-chain: class: f:
+    aspect-chain: class: provider:
     let
-      asp = f { inherit aspect-chain class; };
+      asp = provider { inherit aspect-chain class; };
       new-chain = aspect-chain ++ [ asp.name ];
     in
     aspectModule new-chain class asp;
 
-  aspectModule =
-    aspect-chain: class: asp:
-    let
-      module.imports = lib.flatten [
-        (asp.${class} or { })
-        (lib.map (include aspect-chain class) asp.includes)
-      ];
-    in
-    module;
+  aspectModule = aspect-chain: class: asp: {
+    imports = lib.flatten [
+      (asp.${class} or { })
+      (lib.map (include aspect-chain class) asp.includes)
+    ];
+  };
 in
 {
   transposed = transpose aspects;
