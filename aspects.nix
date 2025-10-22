@@ -11,15 +11,15 @@ let
   include =
     aspect-chain: class: provider:
     let
-      asp = provider { inherit aspect-chain class; };
-      new-chain = aspect-chain ++ [ asp.name ];
+      provided = provider { inherit aspect-chain class; };
+      new-chain = aspect-chain ++ [ provided.name ];
     in
-    aspectModule new-chain class asp;
+    aspectModule new-chain class provided;
 
-  aspectModule = aspect-chain: class: asp: {
+  aspectModule = aspect-chain: class: provided: {
     imports = lib.flatten [
-      (asp.${class} or { })
-      (lib.map (include aspect-chain class) asp.includes)
+      (provided.${class} or { })
+      (lib.map (include aspect-chain class) provided.includes)
     ];
   };
 in
