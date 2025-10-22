@@ -17,5 +17,10 @@ in
     '';
     type = types.aspectsType;
   };
+  config.flake.aspects =
+    { config, ... }:
+    {
+      _module.args.aspects = config;
+    };
   config.flake.modules = aspects.transposed;
 }

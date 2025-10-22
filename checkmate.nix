@@ -116,15 +116,15 @@
             inherit expr expected;
           };
 
-        aspects."test requirements on aspects" =
+        aspects."test dependencies on aspects" =
           let
             flake = mkFlake ({
               flake.aspects =
-                { config, ... }:
+                { aspects, ... }:
                 {
                   aspectOne = {
                     description = "os config";
-                    requires = with config; [ aspectTwo ];
+                    includes = with aspects; [ aspectTwo ];
                     classOne.bar = [ "os" ];
                   };
 
@@ -148,13 +148,13 @@
           let
             flake = mkFlake ({
               flake.aspects =
-                { config, ... }:
+                { aspects, ... }:
                 {
-                  aspectOne.requires = with config.aspectTwo.provides; [
+                  aspectOne.includes = with aspects.aspectTwo.provides; [
                     foo
                     bar
                   ];
-                  aspectOne.classOne = { }; # required for mixing dependencies.
+                  aspectOne.classOne = { }; # included for mixing dependencies.
                   aspectTwo = {
                     classOne.bar = [ "class one not included" ];
                     classTwo.bar = [ "class two not included" ];

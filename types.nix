@@ -22,7 +22,7 @@ let
         default = "Aspect ${name}";
         type = lib.types.str;
       };
-      options.requires = lib.mkOption {
+      options.includes = lib.mkOption {
         description = "Providers to ask aspects from";
         type = lib.types.listOf providerType;
         default = [ ];
