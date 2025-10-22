@@ -154,15 +154,16 @@
                     foo
                     bar
                   ];
+                  aspectOne.classOne = { }; # required for mixing dependencies.
                   aspectTwo = {
                     classOne.bar = [ "class one not included" ];
                     classTwo.bar = [ "class two not included" ];
                     provides.foo =
                       { class, aspect }:
-                      builtins.trace (aspect) ({
+                      {
                         classOne.bar = [ "foo:${aspect}:${class}" ];
                         classTwo.bar = [ "foo class two not included" ];
-                      });
+                      };
                     provides.bar = _: {
                       # classOne is missing on bar
                       classTwo.bar = [ "bar class two not included" ];
