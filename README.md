@@ -154,7 +154,7 @@ The `development-server` aspect addresses a usability concern by configuring the
 }
 ```
 
-Creating OS configurations is outside the scope of this library. Exposing configurations might look like this:
+Creating OS configurations is outside the scope of this library - for that, see [`vic/den`](https://github.com/vic/den) -. Exposing os configurations might look like this:
 
 ```nix
 { inputs, ... }:
