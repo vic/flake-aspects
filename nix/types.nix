@@ -5,6 +5,8 @@ let
     freeformType = lib.types.attrsOf aspectSubmodule;
   };
 
+  # { class, aspect-chain } => aspect-object
+  # _ => aspect-object
   functionToAspect = lib.types.addCheck (lib.types.functionTo aspectSubmodule) (
     f:
     let

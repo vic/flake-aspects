@@ -186,17 +186,17 @@ Cross-aspect dependencies work as follows:
 
 When a module like `flake.modules.nixos.foo` is requested (for example, included in a `nixosConfiguration`), a corresponding module is computed from `flake.aspects.foo.nixos`.
 
-`flake.aspects.foo.includes` is a list of functions (providers) that are called with `{ aspect-chain = ["foo"]; class = "nixos" }`. These providers return another aspect that provides a module of the same `class` (in this case, `nixos`).
+`flake.aspects.foo.includes` is a list of functions (providers). A **provider** is a function `{ class, aspect-chain } => <aspect-object>`. They are called with `{ aspect-chain = ["foo"]; class = "nixos" }`. These providers return an aspect object that contains a module of the same `class` (in this case, `nixos`).
 
 Providers answer the question: given we have `nixos` modules from `[foo]` aspects, what other aspects can provide `nixos` modules that need to be imported?
 
 This means that the included aspect determines which configuration its caller should use.
 
-By default, all aspects have a `<aspect>.provides.itself` provider function that ignores its argument and returns the `<aspect>` itself. This is why `with aspects; [ bar baz ]` works: it is shorthand for `[ aspects.bar.provides.itself aspects.baz.provides.itself ]`.
+By default, all aspects have an `<aspect>.provides.itself` provider function that always returns the `<aspect>` itself. This is why `with aspects; [ bar baz ]` works: it is shorthand for `[ aspects.bar.provides.itself aspects.baz.provides.itself ]`. It is possible to override the default provider, by setting `__functor`, see how [test](https://github.com/vic/flake-aspects/blob/4f88b4ecefbe46ccfa5d9cfa11451a88be169a70/checkmate.nix#L270) or [vic/den](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/nix/aspects-config.nix#L55) do it.
 
 ##### Dynamic modules using provider function's `{ aspect-chain, class }` argument.
 
-You can also define custom providers that inspect the `aspect-chain` and `class` arguments and return a set of modules accordingly. This allows providers to act as proxies or routers for dependencies.
+You can also define custom providers that inspect the `aspect-chain` and `class` values and return a set of modules accordingly. This allows providers to act as conditional proxies or routers for dependencies.
 
 ```nix
 flake.aspects.kde-desktop.provides.karousel = { aspect-chain, class }:
@@ -213,7 +213,9 @@ flake.aspects = { aspects, ... }: {
 
 ##### Parametrized modules from providers.
 
-Providers can be curried like any function, this way you can provide parametrized modules.
+Providers can be curried (but *must* use explicit argument names). This lets you have
+modules parametrized by some values, outside the aspect scope. For a real-world
+usage of this feature, see how `vic/den` [defines](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/nix/aspects-config.nix#L40) `flake.aspects.default.host` and their [use](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/templates/default/modules/_example/aspects.nix#L32).
 
 ```nix
 flake.aspects = { aspects, ... }: {
