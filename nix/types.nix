@@ -61,5 +61,5 @@ let
 
 in
 {
-  inherit aspectsType;
+  inherit aspectsType aspectSubmoduleType providerType;
 }
