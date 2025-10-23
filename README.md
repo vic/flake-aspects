@@ -1,11 +1,11 @@
 <!-- Badges -->
-
 <p align="right">
   <a href="https://nixos.org/"> <img src="https://img.shields.io/badge/Nix-Flake-informational?logo=nixos&logoColor=white" alt="Nix Flake"/> </a>
   <a href="https://github.com/vic/flake-aspects/actions">
   <img src="https://github.com/vic/flake-aspects/actions/workflows/test.yml/badge.svg" alt="CI Status"/> </a>
   <a href="LICENSE"> <img src="https://img.shields.io/github/license/vic/flake-aspects" alt="License"/> </a>
 </p>
+
 
 # `<aspect>.<class>` Transposition for Dendritic Nix
 
@@ -41,7 +41,7 @@ This project provides a small, dependency-free [`transpose`](default.nix) primit
 
 </td>
 <td>
-<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/dd28ce8d-f727-4e31-a192-d3002ee8984e" />
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/dd28ce8d-f727-4e31-a192-d3002ee8984e" />  
 </td>
 <td>
 <code>flake.modules</code>
@@ -233,6 +233,10 @@ flake.aspects = { aspects, ... }: {
 ```
 
 See `aspects."test provides"` [checkmate tests](checkmate.nix) for more examples on chained providers.
+
+
+![aspects](https://github.com/user-attachments/assets/c7eb4e40-8a71-43be-ba44-fb22467f6bd2)
+
 
 ## Testing
 
