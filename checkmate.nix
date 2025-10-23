@@ -246,14 +246,12 @@
               flake.aspects =
                 { aspects, ... }:
                 {
-                  aspectOne.includes = [ (aspects.aspectTwo.provides.hello "mundo") ];
+                  aspectOne.includes = [ (aspects.aspectTwo.provides.hello { world = "mundo"; }) ];
                   aspectOne.classOne.bar = [ "1" ];
 
                   aspectTwo.provides.hello =
-                    world:
-                    # deadnix: skip
-                    { aspect-chain, class }:
-                    {
+                    { world }: # args must always be named.
+                    _: {
                       classOne.bar = [ world ];
                     };
                 };
@@ -275,11 +273,12 @@
               flake.aspects =
                 { aspects, ... }:
                 {
-                  aspectOne.includes = [ (aspects.aspectTwo "hello") ];
+                  aspectOne.includes = [ (aspects.aspectTwo { message = "hello"; }) ];
                   aspectOne.classOne = { }; # required for propagation
 
                   aspectTwo.__functor =
-                    _: message:
+                    _:
+                    { message }: # args must be always named
                     { class, aspect-chain }:
                     { aspect, ... }:
                     {

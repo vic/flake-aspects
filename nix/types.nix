@@ -2,10 +2,25 @@ lib:
 let
 
   aspectsType = lib.types.submodule {
-    freeformType = lib.types.lazyAttrsOf aspectSubmodule;
+    freeformType = lib.types.attrsOf aspectSubmodule;
   };
 
-  providerType = lib.types.functionTo aspectSubmodule;
+  functionToAspect = lib.types.addCheck (lib.types.functionTo aspectSubmodule) (
+    f:
+    let
+      args = lib.functionArgs f;
+      arity = lib.length (lib.attrNames args);
+      isEmpty = arity == 0;
+      hasClass = args ? class;
+      hasChain = args ? aspect-chain;
+      classOnly = hasClass && arity == 1;
+      chainOnly = hasChain && arity == 1;
+      both = hasClass && hasChain && arity == 2;
+    in
+    isEmpty || classOnly || chainOnly || both
+  );
+
+  providerType = lib.types.either functionToAspect (lib.types.functionTo providerType);
 
   aspectSubmodule = aspectSubmoduleWithModules [ ];
 
@@ -22,7 +37,7 @@ let
             ...
           }:
           {
-            freeformType = lib.types.lazyAttrsOf lib.types.deferredModule;
+            freeformType = lib.types.attrsOf lib.types.deferredModule;
             config._module.args.aspect = config;
             options.name = lib.mkOption {
               description = "Aspect name";
@@ -45,7 +60,7 @@ let
               type = lib.types.submodule (
                 { config, ... }:
                 {
-                  freeformType = lib.types.lazyAttrsOf (lib.types.functionTo lib.types.unspecified);
+                  freeformType = lib.types.attrsOf providerType;
                   config._module.args.provides = config;
                   options.itself = lib.mkOption {
                     readOnly = true;
@@ -60,7 +75,7 @@ let
               internal = true;
               visible = false;
               description = "Functor to default provider";
-              type = lib.types.functionTo lib.types.unspecified;
+              type = lib.types.functionTo providerType;
               default = _: aspect.provides.itself;
             };
           }
