@@ -13,7 +13,7 @@ In [aspect-oriented](https://vic.github.io/dendrix/Dendritic.html) [Dendritic](h
 
 However, for many users, a transposed attribute set, `<aspect>.<class>`, can be more intuitive. It often feels more natural to nest classes within aspects rather than the other way around.
 
-This project provides a small, dependency-free [`transpose`](default.nix) primitive that is powerful enough to implement [cross-aspect dependencies](aspects.nix) for any Nix configuration class. It also includes a [flake-parts module](flakeModule.nix) that transforms `flake.aspects` into `flake.modules`.
+This project provides a small, dependency-free [`transpose`](nix/default.nix) primitive that is powerful enough to implement [cross-aspect dependencies](nix/aspects.nix) for any Nix configuration class. It also includes a [flake-parts module](nix/flakeModule.nix) that transforms `flake.aspects` into `flake.modules`.
 
 <table>
 <tr>
@@ -75,16 +75,16 @@ This project provides a small, dependency-free [`transpose`](default.nix) primit
 
 ## Usage
 
-### As a Dependency-Free Library (`./default.nix`)
+### As a Dependency-Free Library (`./nix/default.nix`)
 
-The [`transpose`](default.nix) library accepts an optional `emit` function that can be used to ignore items, modify them, or generate multiple items from a single input.
+The [`transpose`](nix/default.nix) library accepts an optional `emit` function that can be used to ignore items, modify them, or generate multiple items from a single input.
 
 ```nix
-let transpose = import ./default.nix { lib = pkgs.lib; }; in
+let transpose = import ./nix/default.nix { lib = pkgs.lib; }; in
 transpose { a.b.c = 1; } # => { b.a.c = 1; }
 ```
 
-This `emit` function is utilized by the [`aspects`](aspects.nix) library (both libraries are independent of flakes) to manage cross-aspect, same-class module dependencies.
+This `emit` function is utilized by the [`aspects`](nix/aspects.nix) library (both libraries are independent of flakes) to manage cross-aspect, same-class module dependencies.
 
 ### As a Dendritic Flake-Parts Module (`flake.aspects` option)
 

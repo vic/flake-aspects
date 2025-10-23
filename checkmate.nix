@@ -3,7 +3,7 @@
   perSystem =
     { lib, ... }:
     let
-      transpose = import ./. { inherit lib; };
+      transpose = import ./nix { inherit lib; };
 
       mkFlake =
         mod:
@@ -14,7 +14,7 @@
           {
             systems = [ ];
             imports = [
-              ./flakeModule.nix
+              ./nix/flakeModule.nix
               inputs.flake-parts.flakeModules.modules
               mod
               (fooMod "aspectOne")
@@ -84,7 +84,7 @@
                 {
                   systems = [ ];
                   imports = [
-                    ./flakeModule.nix
+                    ./nix/flakeModule.nix
                     inputs.flake-parts.flakeModules.modules
                   ];
                 };
@@ -263,6 +263,42 @@
             expected = [
               "1"
               "mundo"
+            ];
+          in
+          {
+            inherit expr expected;
+          };
+
+        aspects."test override default provider" =
+          let
+            flake = mkFlake {
+              flake.aspects =
+                { aspects, ... }:
+                {
+                  aspectOne.includes = [ (aspects.aspectTwo "hello") ];
+                  aspectOne.classOne = { }; # required for propagation
+
+                  aspectTwo.__functor =
+                    _: message:
+                    { class, aspect-chain }:
+                    { aspect, ... }:
+                    {
+                      classOne.bar = [
+                        aspect.name
+                        message
+                        class
+                      ] ++ aspect-chain;
+                    };
+                  aspectTwo.classOne.bar = [ "itself not included" ];
+                };
+            };
+
+            expr = (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
+            expected = [
+              "<function body>"
+              "hello"
+              "classOne"
+              "aspectOne"
             ];
           in
           {

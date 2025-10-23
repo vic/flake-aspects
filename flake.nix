@@ -1,6 +1,6 @@
 {
   outputs = _: {
-    __functor = _: import ./.;
-    flakeModule = ./flakeModule.nix;
+    __functor = _: import ./nix;
+    flakeModule = ./nix/flakeModule.nix;
   };
 }
