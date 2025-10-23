@@ -219,7 +219,7 @@ Providers can be curried like any function, this way you can provide parametrize
 flake.aspects = { aspects, ... }: {
   system = {
     nixos.system.stateVersion = "25.11";
-    provides.user = userName: { aspect-chain, class }: {
+    provides.user = { userName }: { aspect-chain, class }: {
       darwin.system.primaryUser = userName;
       nixos.users.${userName}.isNormalUser = true;
     }
@@ -227,14 +227,12 @@ flake.aspects = { aspects, ... }: {
 
   home-server.includes = [
     aspects.system
-    (aspects.system.provides.user "bob")
+    (aspects.system.provides.user { userName = "bob"; })
   ];
 }
 ```
 
 See `aspects."test provides"` [checkmate tests](checkmate.nix) for more examples on chained providers.
-
-![aspects](https://github.com/user-attachments/assets/c7eb4e40-8a71-43be-ba44-fb22467f6bd2)
 
 ## Testing
 
