@@ -28,73 +28,63 @@ let
 
   providerType = lib.types.either functionToAspect (lib.types.functionTo providerType);
 
-  aspectSubmodule = aspectSubmoduleWithModules [ ];
-
-  aspectSubmoduleWithModules =
-    otherModules:
-    lib.types.submoduleWith {
-      shorthandOnlyDefinesConfig = true;
-      modules = otherModules ++ [
-        (
+  aspectSubmodule = lib.types.submodule (
+    {
+      name,
+      aspect,
+      config,
+      ...
+    }:
+    {
+      freeformType = lib.types.attrsOf lib.types.deferredModule;
+      config._module.args.aspect = config;
+      options.name = lib.mkOption {
+        description = "Aspect name";
+        default = name;
+        type = lib.types.str;
+      };
+      options.description = lib.mkOption {
+        description = "Aspect description";
+        default = "Aspect ${name}";
+        type = lib.types.str;
+      };
+      options.includes = lib.mkOption {
+        description = "Providers to ask aspects from";
+        type = lib.types.listOf providerType;
+        default = [ ];
+      };
+      options.provides = lib.mkOption {
+        description = "Providers of aspect for other aspects";
+        default = { };
+        type = lib.types.submodule (
+          { config, ... }:
           {
-            name,
-            aspect,
-            config,
-            ...
-          }:
-          {
-            freeformType = lib.types.attrsOf lib.types.deferredModule;
-            config._module.args.aspect = config;
-            options.name = lib.mkOption {
-              description = "Aspect name";
-              default = name;
-              type = lib.types.str;
-            };
-            options.description = lib.mkOption {
-              description = "Aspect description";
-              default = "Aspect ${name}";
-              type = lib.types.str;
-            };
-            options.includes = lib.mkOption {
-              description = "Providers to ask aspects from";
-              type = lib.types.listOf providerType;
-              default = [ ];
-            };
-            options.provides = lib.mkOption {
-              description = "Providers of aspect for other aspects";
-              default = { };
-              type = lib.types.submodule (
-                { config, ... }:
-                {
-                  freeformType = lib.types.attrsOf providerType;
-                  config._module.args.provides = config;
-                  options.itself = lib.mkOption {
-                    readOnly = true;
-                    description = "Provides itself";
-                    type = providerType;
-                    default = _: aspect;
-                  };
-                }
-              );
-            };
-            options.__functor = lib.mkOption {
-              internal = true;
-              visible = false;
-              description = "Functor to default provider";
-              type = lib.types.functionTo providerType;
-              default = _: aspect.provides.itself;
+            freeformType = lib.types.attrsOf providerType;
+            config._module.args.provides = config;
+            options.itself = lib.mkOption {
+              readOnly = true;
+              description = "Provides itself";
+              type = providerType;
+              default = _: aspect;
             };
           }
-        )
-      ];
-    };
+        );
+      };
+      options.__functor = lib.mkOption {
+        internal = true;
+        visible = false;
+        description = "Functor to default provider";
+        type = lib.types.functionTo providerType;
+        default = _: aspect.provides.itself;
+      };
+    }
+  );
 
 in
 {
   inherit
     aspectsType
     aspectSubmodule
-    aspectSubmoduleWithModules
     providerType
     ;
 }
