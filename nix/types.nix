@@ -12,13 +12,14 @@ let
     let
       args = lib.functionArgs f;
       arity = lib.length (lib.attrNames args);
-      hasClass = args ? class || args ? _class;
-      hasChain = args ? aspect-chain || args ? _aspect-chain;
+      isEmpty = arity == 0;
+      hasClass = args ? class;
+      hasChain = args ? aspect-chain;
       classOnly = hasClass && arity == 1;
       chainOnly = hasChain && arity == 1;
       both = hasClass && hasChain && arity == 2;
     in
-    classOnly || chainOnly || both
+    isEmpty || classOnly || chainOnly || both
   );
 
   providerType = lib.types.either functionToAspect (lib.types.functionTo providerType);
