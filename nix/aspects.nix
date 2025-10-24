@@ -1,18 +1,23 @@
 lib: aspects:
 let
   transpose = import ./. { inherit lib emit; };
-  emit = transposed: [
-    {
-      inherit (transposed) parent child;
-      value = aspectModule [ transposed.child ] transposed.parent aspects.${transposed.child};
-    }
-  ];
+  emit =
+    transposed:
+    let
+      aspect = aspects.${transposed.child};
+    in
+    [
+      {
+        inherit (transposed) parent child;
+        value = aspectModule [ aspect ] transposed.parent aspect;
+      }
+    ];
 
   include =
     aspect-chain: class: provider:
     let
       provided = provider { inherit aspect-chain class; };
-      new-chain = aspect-chain ++ [ provided.name ];
+      new-chain = aspect-chain ++ [ provided ];
     in
     aspectModule new-chain class provided;
 
