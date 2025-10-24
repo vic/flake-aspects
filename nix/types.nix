@@ -5,16 +5,20 @@ let
     freeformType = lib.types.attrsOf aspectSubmodule;
   };
 
+  # checks the argument names to be those of a provider function:
+  #
   # { class, aspect-chain } => aspect-object
-  # _ => aspect-object
+  # { _class, ... } => aspect-object
+  # { _aspect-chain, ... } => aspect-object
+  # name => aspect-object
   functionToAspect = lib.types.addCheck (lib.types.functionTo aspectSubmodule) (
     f:
     let
       args = lib.functionArgs f;
       arity = lib.length (lib.attrNames args);
       isEmpty = arity == 0;
-      hasClass = args ? class;
-      hasChain = args ? aspect-chain;
+      hasClass = args ? class || args ? _class;
+      hasChain = args ? aspect-chain || args ? _aspect-chain;
       classOnly = hasClass && arity == 1;
       chainOnly = hasChain && arity == 1;
       both = hasClass && hasChain && arity == 2;
