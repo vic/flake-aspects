@@ -164,7 +164,7 @@
                         name = "aspectTwo.foo";
                         description = "aspectTwo foo provided";
                         includes = [ aspects.aspectThree.provides.moo ];
-                        classOne.bar = [ "two:${class}:${lib.concatStringsSep "/" aspect-chain}" ];
+                        classOne.bar = [ "two:${class}:${lib.concatStringsSep "/" (lib.map (x: x.name) aspect-chain)}" ];
                         classTwo.bar = [ "foo class two not included" ];
                       };
                     provides.bar = _: {
@@ -175,7 +175,7 @@
                   aspectThree.provides.moo =
                     { aspect-chain, class }:
                     {
-                      classOne.bar = [ "three:${class}:${lib.concatStringsSep "/" aspect-chain}" ];
+                      classOne.bar = [ "three:${class}:${lib.concatStringsSep "/" (lib.map (x: x.name) aspect-chain)}" ];
                     };
                 };
             };
@@ -286,7 +286,7 @@
                         aspect.name
                         message
                         class
-                      ] ++ aspect-chain;
+                      ] ++ (lib.map (x: x.name) aspect-chain);
                     };
                   aspectTwo.classOne.bar = [ "itself not included" ];
                 };

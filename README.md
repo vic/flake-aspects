@@ -186,7 +186,7 @@ Cross-aspect dependencies work as follows:
 
 When a module like `flake.modules.nixos.foo` is requested (for example, included in a `nixosConfiguration`), a corresponding module is computed from `flake.aspects.foo.nixos`.
 
-`flake.aspects.foo.includes` is a list of functions (providers). A **provider** is a function `{ class, aspect-chain } => <aspect-object>`. They are called with `{ aspect-chain = ["foo"]; class = "nixos" }`. These providers return an aspect object that contains a module of the same `class` (in this case, `nixos`).
+`flake.aspects.foo.includes` is a list of functions (providers). A **provider** is a function `{ class, aspect-chain } => <aspect-object>`. They are called with `{ aspect-chain = [ aspects.foo ]; class = "nixos" }`, functions can inspect the chain of aspects that have led to the call. These providers return an aspect object that contains a module of the same `class` (in this case, `nixos`).
 
 Providers answer the question: given we have `nixos` modules from `[foo]` aspects, what other aspects can provide `nixos` modules that need to be imported?
 
