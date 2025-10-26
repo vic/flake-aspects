@@ -26,7 +26,8 @@ let
     isEmpty || classOnly || chainOnly || both
   );
 
-  providerType = lib.types.either functionToAspect (lib.types.functionTo providerType);
+  functionProviderType = lib.types.either functionToAspect (lib.types.functionTo providerType);
+  providerType = lib.types.either functionProviderType aspectSubmodule;
 
   aspectSubmodule = lib.types.submodule (
     {

@@ -167,7 +167,8 @@
                         classOne.bar = [ "two:${class}:${lib.concatStringsSep "/" (lib.map (x: x.name) aspect-chain)}" ];
                         classTwo.bar = [ "foo class two not included" ];
                       };
-                    provides.bar = _: {
+                    # a provider can be immediately an aspect object.
+                    provides.bar = {
                       # classOne is missing on bar
                       classTwo.bar = [ "bar class two not included" ];
                     };
