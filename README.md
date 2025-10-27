@@ -220,7 +220,7 @@ This pattern allows an included aspect to determine which configuration its call
 
 Providers can be implemented as curried functions, allowing you to create parameterized modules. All arguments must be explicitly named. This is useful for creating reusable configurations that can be customized at the inclusion site.
 
-For a real-world example, see how `vic/den` [defines](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/nix/aspects-config.nix#L40) `flake.aspects.default.host` and its [usage](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/templates/default/modules/_example/aspects.nix#L32).
+For a real-world example, see how `vic/den` [defines](https://github.com/vic/den/blob/main/nix/aspects.nix) `flake.aspects.default.host` and its [usage](https://github.com/vic/den/blob/main/templates/default/modules/_example/aspects.nix).
 
 ```nix
 flake.aspects = { aspects, ... }: {
