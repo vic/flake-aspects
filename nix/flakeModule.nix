@@ -4,23 +4,12 @@
   ...
 }:
 let
-  aspects = import ./aspects.nix lib config.flake.aspects;
-  types = import ./types.nix lib;
+  newAspects = import ./new.nix lib;
+  mod = newAspects (option: transposed: {
+    options.flake.aspects = option;
+    config.flake.modules = transposed;
+  }) config.flake.aspects;
 in
 {
-  options.flake.aspects = lib.mkOption {
-    default = { };
-    description = ''
-      Attribute set of `<aspect>.<class>` modules.
-
-      Convenience transposition of `flake.modules.<class>.<aspect>`.
-    '';
-    type = types.aspectsType;
-  };
-  config.flake.aspects =
-    { config, ... }:
-    {
-      _module.args.aspects = config;
-    };
-  config.flake.modules = aspects.transposed;
+  imports = [ mod ];
 }
