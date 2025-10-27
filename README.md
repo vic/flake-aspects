@@ -75,20 +75,22 @@ This project provides a small, dependency-free [`transpose`](nix/default.nix) pr
 
 ## Usage
 
+The library can be used in two ways: as a dependency-free utility or as a `flake-parts` module.
+
 ### As a Dependency-Free Library (`./nix/default.nix`)
 
-The [`transpose`](nix/default.nix) library accepts an optional `emit` function that can be used to ignore items, modify them, or generate multiple items from a single input.
+The core of this project is the [`transpose`](nix/default.nix) function, which is powerful enough to implement cross-aspect dependencies for any Nix configuration class. It accepts an optional `emit` function that can be used to ignore items, modify them, or generate multiple items from a single input.
 
 ```nix
 let transpose = import ./nix/default.nix { lib = pkgs.lib; }; in
 transpose { a.b.c = 1; } # => { b.a.c = 1; }
 ```
 
-This `emit` function is utilized by the [`aspects`](nix/aspects.nix) library (both libraries are independent of flakes) to manage cross-aspect, same-class module dependencies.
+This `emit` function is utilized by the [`aspects`](nix/aspects.nix) library to manage module dependencies between different aspects of the same class. Both `transpose` and `aspects` are independent of flakes.
 
 ### As a Dendritic Flake-Parts Module (`flake.aspects` option)
 
-The `flake.aspects` option is transposed into `flake.modules`.
+When used as a `flake-parts` module, the `flake.aspects` option is automatically transposed into `flake.modules`, making the modules available to other parts of your flake.
 
 ```nix
 # The code in this example can (and should) be split into different Dendritic modules.
@@ -124,37 +126,38 @@ The `flake.aspects` option is transposed into `flake.modules`.
 
 #### Declaring Cross-Aspect Dependencies
 
-`flake.aspects` also allows aspects to declare dependencies among themselves.
+Aspects can declare dependencies on other aspects using the `includes` attribute. This allows you to compose configurations in a modular way.
 
-Each module can have its own `imports`, but aspect dependencies are defined at the aspect level, not the module level. Dependencies are eventually resolved to modules and are imported only if they exist.
+Dependencies are defined at the aspect level, not within individual modules. When a module from an aspect is evaluated (e.g., `flake.modules.nixos.development-server`), the library resolves all dependencies for the `nixos` class and imports the corresponding modules if they exist.
 
-In the example below, the `development-server` aspect can be applied to both Linux and macOS hosts. Note that `alice` uses `nixos` + `homeManager`, while `bob` uses `darwin` + `hjem`.
-
-The `development-server` aspect addresses a usability concern by configuring the same development environment on different operating systems. When applied to a NixOS machine, the `alice.nixos` module will likely configure the `alice` user; there is no corresponding NixOS user for `bob`.
+In the example below, the `development-server` aspect includes the `alice` and `bob` aspects. This demonstrates how to create a consistent development environment across different operating systems and user configurations.
 
 ```nix
 {
   flake.aspects = { aspects, ... }: {
     development-server = {
+      # This aspect now includes modules from 'alice' and 'bob'.
       includes = with aspects; [ alice bob ];
 
-      # Without flake-aspects, you would normally do:
+      # Without flake-aspects, you would have to do this manually for each class.
       # nixos.imports  = [ inputs.self.modules.nixos.alice ];
       # darwin.imports = [ inputs.self.modules.darwin.bob ];
     };
 
     alice = {
       nixos = {};
+      homeManager = {};
     };
 
     bob = {
       darwin = {};
+      hjem = {};
     };
   };
 }
 ```
 
-Creating OS configurations is outside the scope of this library - for that, see [`vic/den`](https://github.com/vic/den) -. Exposing os configurations might look like this:
+Creating the final OS configurations is outside the scope of this library—for that, see [`vic/den`](https://github.com/vic/den). However, exposing them would look like this:
 
 ```nix
 { inputs, ... }:
@@ -171,32 +174,32 @@ Creating OS configurations is outside the scope of this library - for that, see 
 }
 ```
 
-#### Advanced Aspect Dependencies
+### Advanced Aspect Dependencies: Providers
 
-An aspect can declare a `includes` list:
+Dependencies are managed through a powerful abstraction called **providers**. A provider is a value that returns an aspect object, which can then supply modules to the aspect that includes it.
+
+A provider can be either a static aspect object or a function that dynamically returns one. This mechanism enables sophisticated dependency chains, conditional logic, and parameterization.
+
+#### The Default Provider: `provides.itself`
+
+Every aspect automatically has a default provider called `itself`, located at `<aspect>.provides.itself`. This provider simply returns the aspect itself.
+
+The `with aspects; [ bar baz ]` syntax is a convenient shorthand that relies on this default:
 
 ```nix
 # A 'foo' aspect that depends on 'bar' and 'baz' aspects.
 flake.aspects = { aspects, ... }: {
-  foo.includes = [ aspects.bar aspects.baz ];
+  foo.includes = with aspects; [ bar baz ];
+  # This is equivalent to:
+  # foo.includes = [ aspects.bar.provides.itself aspects.baz.provides.itself ];
 }
 ```
 
-Cross-aspect dependencies work as follows:
+#### Custom Providers
 
-When a module like `flake.modules.nixos.foo` is requested (for example, included in a `nixosConfiguration`), a corresponding module is computed from `flake.aspects.foo.nixos`.
+You can define custom providers to implement more complex logic. A provider function receives the current `class` (e.g., `"nixos"`) and the `aspect-chain` (the list of aspects that led to the call). This allows a provider to act as a conditional proxy or router for dependencies.
 
-`flake.aspects.foo.includes` is a list of functions (providers). A **provider** is either a constant `<aspect-object>` or a function `{ class, aspect-chain } => <aspect-object>`. They are called with `{ aspect-chain = [ aspects.foo ]; class = "nixos" }`, functions can inspect the chain of aspects that have led to the call. These providers return an aspect object that contains a module of the same `class` (in this case, `nixos`). Providers allow us to have a tree of aspects where each provided aspect can be either static or parametric.
-
-Providers answer the question: given we have `nixos` modules from `[foo]` aspects, what other aspects can provide `nixos` modules that need to be imported?
-
-This means that the included aspect determines which configuration its caller should use.
-
-By default, all aspects have an `<aspect>.provides.itself` provider function that always returns the `<aspect>` itself. This is why `with aspects; [ bar baz ]` works: it is shorthand for `[ aspects.bar.provides.itself aspects.baz.provides.itself ]`. It is possible to override the default provider, by setting `__functor`, see how [test](https://github.com/vic/flake-aspects/blob/4f88b4ecefbe46ccfa5d9cfa11451a88be169a70/checkmate.nix#L270) or [vic/den](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/nix/aspects-config.nix#L55) do it.
-
-##### Dynamic modules using provider function's `{ aspect-chain, class }` argument.
-
-You can also define custom providers that inspect the `aspect-chain` and `class` values and return a set of modules accordingly. This allows providers to act as conditional proxies or routers for dependencies.
+In this example, the `kde-desktop` aspect defines a custom `karousel` provider that only returns a module if certain conditions are met:
 
 ```nix
 flake.aspects.kde-desktop.provides.karousel = { aspect-chain, class }:
@@ -211,11 +214,13 @@ flake.aspects = { aspects, ... }: {
 }
 ```
 
-##### Parametrized modules from providers.
+This pattern allows an included aspect to determine which configuration its caller should use, enabling a tree of dependencies where each node can be either static or parametric.
 
-Providers can be curried (but *must* use explicit argument names). This lets you have
-modules parametrized by some values, outside the aspect scope. For a real-world
-usage of this feature, see how `vic/den` [defines](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/nix/aspects-config.nix#L40) `flake.aspects.default.host` and their [use](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/templates/default/modules/_example/aspects.nix#L32).
+#### Parameterized Providers
+
+Providers can be implemented as curried functions, allowing you to create parameterized modules. All arguments must be explicitly named. This is useful for creating reusable configurations that can be customized at the inclusion site.
+
+For a real-world example, see how `vic/den` [defines](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/nix/aspects-config.nix#L40) `flake.aspects.default.host` and its [usage](https://github.com/vic/den/blob/def1c396e7ce884578d6589391cca8a4c6a650d3/templates/default/modules/_example/aspects.nix#L32).
 
 ```nix
 flake.aspects = { aspects, ... }: {
@@ -224,7 +229,7 @@ flake.aspects = { aspects, ... }: {
     provides.user = { userName }: { aspect-chain, class }: {
       darwin.system.primaryUser = userName;
       nixos.users.${userName}.isNormalUser = true;
-    }
+    };
   };
 
   home-server.includes = [
@@ -234,7 +239,11 @@ flake.aspects = { aspects, ... }: {
 }
 ```
 
-See `aspects."test provides"` [checkmate tests](checkmate.nix) for more examples on chained providers.
+See the `aspects."test provides"` and `aspects."test provides using fixpoints"` sections in the [checkmate tests](checkmate.nix) for more examples of chained providers.
+
+#### The `_` Alias for `provides`
+
+For convenience, `_` is an alias for `provides`. This allows for more concise chaining of providers. For example, `foo.provides.bar.provides.baz` can be written as `foo._.bar._.baz`.
 
 ## Testing
 

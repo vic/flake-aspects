@@ -1,15 +1,19 @@
 lib:
 let
 
-  aspectsType = lib.types.submodule {
-    freeformType = lib.types.attrsOf aspectSubmodule;
-  };
+  aspectsType = lib.types.submodule (
+    { config, ... }:
+    {
+      freeformType = lib.types.attrsOf aspectSubmodule;
+      config._module.args.aspects = config;
+    }
+  );
 
   # checks the argument names to be those of a provider function:
   #
   # { class, aspect-chain } => aspect-object
-  # { _class, ... } => aspect-object
-  # { _aspect-chain, ... } => aspect-object
+  # { class, ... } => aspect-object
+  # { aspect-chain, ... } => aspect-object
   # name => aspect-object
   functionToAspect = lib.types.addCheck (lib.types.functionTo aspectSubmodule) (
     f:
@@ -17,8 +21,8 @@ let
       args = lib.functionArgs f;
       arity = lib.length (lib.attrNames args);
       isEmpty = arity == 0;
-      hasClass = args ? class || args ? _class;
-      hasChain = args ? aspect-chain || args ? _aspect-chain;
+      hasClass = args ? class;
+      hasChain = args ? aspect-chain;
       classOnly = hasClass && arity == 1;
       chainOnly = hasChain && arity == 1;
       both = hasClass && hasChain && arity == 2;
@@ -39,6 +43,7 @@ let
     {
       freeformType = lib.types.attrsOf lib.types.deferredModule;
       config._module.args.aspect = config;
+      imports = [ (lib.mkAliasOptionModule [ "_" ] [ "provides" ]) ];
       options.name = lib.mkOption {
         description = "Aspect name";
         default = name;

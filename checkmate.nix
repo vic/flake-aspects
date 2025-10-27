@@ -163,7 +163,10 @@
                       {
                         name = "aspectTwo.foo";
                         description = "aspectTwo foo provided";
-                        includes = [ aspects.aspectThree.provides.moo ];
+                        includes = [
+                          aspects.aspectThree.provides.moo
+                          aspects.aspectTwo.provides.baz
+                        ];
                         classOne.bar = [ "two:${class}:${lib.concatStringsSep "/" (lib.map (x: x.name) aspect-chain)}" ];
                         classTwo.bar = [ "foo class two not included" ];
                       };
@@ -171,6 +174,11 @@
                     provides.bar = {
                       # classOne is missing on bar
                       classTwo.bar = [ "bar class two not included" ];
+                    };
+                    # _ is an shortcut alias of provides.
+                    _.baz = {
+                      # classOne is missing on bar
+                      classTwo.bar = [ "baz" ];
                     };
                   };
                   aspectThree.provides.moo =
