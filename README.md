@@ -75,7 +75,7 @@ This project provides a small, dependency-free [`transpose`](nix/default.nix) pr
 
 ## Usage
 
-The library can be used in two ways: as a dependency-free utility or as a `flake-parts` module.
+The library can be used in two ways: as a flakes-independent dependency-free utility or as a `flake-parts` module.
 
 ### As a Dependency-Free Library (`./nix/default.nix`)
 
@@ -87,6 +87,10 @@ transpose { a.b.c = 1; } # => { b.a.c = 1; }
 ```
 
 This `emit` function is utilized by the [`aspects`](nix/aspects.nix) library to manage module dependencies between different aspects of the same class. Both `transpose` and `aspects` are independent of flakes.
+
+#### Use aspects without flakes.
+
+It is possible to use the aspects system as a library, independent of flakes. This can be used, for example, to avoid poluting flake-parts' `flake.modules` or by libraries that want to create own isolated aspects scope. For examples of this, see our own [flake-parts integration](nix/flakeModule.nix), and how [`den`](https://github.com/vic/den) creates its own [`den.aspects` scope](https://github.com/vic/den/blob/main/nix/scope.nix) independent of `flakes.aspects`/`flake.modules`.
 
 ### As a Dendritic Flake-Parts Module (`flake.aspects` option)
 
