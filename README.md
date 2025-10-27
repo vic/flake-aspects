@@ -94,7 +94,7 @@ It is possible to use the aspects system as a library, independent of flakes. Th
 
 ### As a Dendritic Flake-Parts Module (`flake.aspects` option)
 
-When used as a `flake-parts` module, the `flake.aspects` option is automatically transposed into `flake.modules`, making the modules available to other parts of your flake.
+When used as a `flake-parts` module, the `flake.aspects` option is automatically transposed into `flake.modules`, making the modules available to consumers of your flake.
 
 ```nix
 # The code in this example can (and should) be split into different Dendritic modules.
