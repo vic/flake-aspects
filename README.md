@@ -90,7 +90,7 @@ This `emit` function is utilized by the [`aspects`](nix/aspects.nix) library to 
 
 #### Use aspects without flakes.
 
-It is possible to use the aspects system as a library, independent of flakes. This can be used, for example, to avoid poluting flake-parts' `flake.modules` or by libraries that want to create own isolated aspects scope. For examples of this, see our own [flake-parts integration](nix/flakeModule.nix), and how [`den`](https://github.com/vic/den) creates its own [`den.aspects` scope](https://github.com/vic/den/blob/main/nix/scope.nix) independent of `flakes.aspects`/`flake.modules`.
+It is possible to use the aspects system as a library, [without flakes](https://github.com/vic/flake-aspects/blob/b94d806/checkmate.nix#L76). This can be used, for example, to avoid poluting flake-parts' `flake.modules` or by libraries that want to create own isolated aspects scope. For examples of this, see our own [flake-parts integration](nix/flakeModule.nix), and how [`den`](https://github.com/vic/den) creates its own [`den.aspects` scope](https://github.com/vic/den/blob/main/nix/scope.nix) independent of `flakes.aspects`/`flake.modules`.
 
 ### As a Dendritic Flake-Parts Module (`flake.aspects` option)
 
