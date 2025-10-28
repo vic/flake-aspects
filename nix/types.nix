@@ -1,5 +1,6 @@
 lib:
 let
+  resolve = import ./resolve.nix lib;
 
   aspectsType = lib.types.submodule (
     { config, ... }:
@@ -82,6 +83,19 @@ let
         description = "Functor to default provider";
         type = lib.types.functionTo providerType;
         default = _: aspect.provides.itself;
+      };
+      options.resolve = lib.mkOption {
+        internal = true;
+        visible = false;
+        readOnly = true;
+        description = "function to resolve a module from this aspect";
+        type = lib.types.functionTo lib.types.deferredModule;
+        default =
+          {
+            class,
+            aspect-chain ? [ ],
+          }:
+          resolve class aspect-chain aspect;
       };
     }
   );

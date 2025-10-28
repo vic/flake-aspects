@@ -184,6 +184,50 @@
             inherit expr expected;
           };
 
+        aspects."test resolve aspect-chain" =
+          let
+            flake = mkFlake {
+              flake.aspects = {
+                aspectOne =
+                  { aspect, ... }:
+                  {
+                    name = "one";
+                    includes = [ aspect.provides.dos ];
+                    classOne.bar = [ "zzz" ];
+                    provides.dos =
+                      { aspect-chain, ... }:
+                      {
+                        name = "dos";
+                        includes = [ aspect.provides.tres ];
+                        classOne.bar = map (x: x.name) aspect-chain;
+                      };
+
+                    provides.tres =
+                      { aspect-chain, ... }:
+                      {
+                        name = "tres";
+                        classOne.bar = [ (lib.last aspect-chain).name ];
+                      };
+                  };
+              };
+            };
+            mod = {
+              imports = [
+                fooOpt
+                (flake.aspects.aspectOne.resolve { class = "classOne"; })
+              ];
+            };
+            expr = lib.sort (a: b: a < b) (evalMod "classOne" mod).bar;
+            expected = [
+              "dos"
+              "one"
+              "zzz"
+            ];
+          in
+          {
+            inherit expr expected;
+          };
+
         aspects."test provides" =
           let
             flake = mkFlake {
