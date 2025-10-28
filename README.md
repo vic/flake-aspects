@@ -222,15 +222,15 @@ This pattern allows an included aspect to determine which configuration its call
 
 #### Parameterized Providers
 
-Providers can be implemented as curried functions, allowing you to create parameterized modules. All arguments must be explicitly named. This is useful for creating reusable configurations that can be customized at the inclusion site.
+Providers can be implemented as curried functions, allowing you to create parameterized modules. This is useful for creating reusable configurations that can be customized at the inclusion site.
 
-For a real-world example, see how `vic/den` [defines](https://github.com/vic/den/blob/main/nix/aspects.nix) `flake.aspects.default.host` and its [usage](https://github.com/vic/den/blob/main/templates/default/modules/_example/aspects.nix).
+For real-world examples, see how `vic/den` defines [auto-imports](https://github.com/vic/den/blob/main/modules/aspects/batteries/import-tree.nix) and [home-managed](https://github.com/vic/den/blob/main/modules/aspects/batteries/home-managed.nix) parametric aspects.
 
 ```nix
 flake.aspects = { aspects, ... }: {
   system = {
     nixos.system.stateVersion = "25.11";
-    provides.user = { userName }: { aspect-chain, class }: {
+    provides.user = userName: {
       darwin.system.primaryUser = userName;
       nixos.users.${userName}.isNormalUser = true;
     };
@@ -238,7 +238,7 @@ flake.aspects = { aspects, ... }: {
 
   home-server.includes = [
     aspects.system
-    (aspects.system.provides.user { userName = "bob"; })
+    (aspects.system.provides.user "bob")
   ];
 }
 ```

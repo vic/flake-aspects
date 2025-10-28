@@ -303,14 +303,14 @@
                       provides =
                         { provides, ... }:
                         {
-                          three-and-four-and-five = _: {
+                          three-and-four-and-five = {
                             classOne.bar = [ "3" ];
                             includes = [
                               provides.four
                               aspects.five
                             ];
                           };
-                          four = _: {
+                          four = {
                             classOne.bar = [ "4" ];
                           };
                         };
@@ -339,14 +339,12 @@
               flake.aspects =
                 { aspects, ... }:
                 {
-                  aspectOne.includes = [ (aspects.aspectTwo.provides.hello { world = "mundo"; }) ];
+                  aspectOne.includes = [ (aspects.aspectTwo.provides.hello "mundo") ];
                   aspectOne.classOne.bar = [ "1" ];
 
-                  aspectTwo.provides.hello =
-                    { world }: # args must always be named.
-                    _: {
-                      classOne.bar = [ world ];
-                    };
+                  aspectTwo.provides.hello = world: {
+                    classOne.bar = [ world ];
+                  };
                 };
             };
 

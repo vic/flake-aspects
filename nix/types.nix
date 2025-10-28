@@ -15,20 +15,18 @@ let
   # { class, aspect-chain } => aspect-object
   # { class, ... } => aspect-object
   # { aspect-chain, ... } => aspect-object
-  # name => aspect-object
   functionToAspect = lib.types.addCheck (lib.types.functionTo aspectSubmodule) (
     f:
     let
       args = lib.functionArgs f;
       arity = lib.length (lib.attrNames args);
-      isEmpty = arity == 0;
       hasClass = args ? class;
       hasChain = args ? aspect-chain;
       classOnly = hasClass && arity == 1;
       chainOnly = hasChain && arity == 1;
       both = hasClass && hasChain && arity == 2;
     in
-    isEmpty || classOnly || chainOnly || both
+    classOnly || chainOnly || both
   );
 
   functionProviderType = lib.types.either functionToAspect (lib.types.functionTo providerType);
@@ -72,7 +70,9 @@ let
               readOnly = true;
               description = "Provides itself";
               type = providerType;
-              default = _: aspect;
+              default =
+                # deadnix: skip
+                { class, ... }: aspect;
             };
           }
         );
