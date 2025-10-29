@@ -73,6 +73,28 @@ This project provides a small, dependency-free [`transpose`](nix/default.nix) pr
 </tr>
 </table>
 
+Unlike `flake.modules.<class>.<aspect>` which is _flat_, aspects can be nested forming a _tree_ by using the `provides` (short alias: `_`) attribute. Each aspect can also specify a list of `includes` of other aspects, forming a _graph_ of dependencies.
+
+```nix
+{
+  flake.aspects = {
+    gaming = {
+      nixos  = {};
+      darwin = {};
+
+      provides.emulation = { aspect, ... }: {
+        nixos = {};
+
+        _.nes.nixos = {};
+        _.gba.nixos = {};
+
+        includes = with aspect._; [ nes gba ];
+      };
+    };
+  };
+}
+```
+
 ## Usage
 
 The library can be used in two ways: as a flakes-independent dependency-free utility or as a `flake-parts` module.
