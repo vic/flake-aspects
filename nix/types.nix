@@ -82,7 +82,7 @@ let
         visible = false;
         description = "Functor to default provider";
         type = lib.types.functionTo providerType;
-        default = _: aspect.provides.itself;
+        default = aspect: aspect.provides.itself;
       };
       options.resolve = lib.mkOption {
         internal = true;
@@ -95,7 +95,9 @@ let
             class,
             aspect-chain ? [ ],
           }:
-          resolve class aspect-chain (aspect.__functor aspect { inherit class aspect-chain; });
+          resolve class aspect-chain (aspect {
+            inherit class aspect-chain;
+          });
       };
     }
   );

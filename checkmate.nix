@@ -401,19 +401,17 @@
               flake.aspects =
                 { aspects, ... }:
                 {
-                  aspectOne =
-                    { aspect, ... }:
-                    {
-                      classOne.bar = [ "should-not-be-present" ];
-                      includes = [ aspects.aspectTwo ];
-                      __functor = _: {
-                        includes = [
-                          { classOne.bar = [ "from-functor" ]; }
-                        ] ++ map (f: f { message = "hello"; }) aspect.includes;
-                      };
+                  aspectOne = {
+                    classOne.bar = [ "should-not-be-present" ];
+                    includes = [ aspects.aspectTwo ];
+                    __functor = aspect: {
+                      includes = [
+                        { classOne.bar = [ "from-functor" ]; }
+                      ] ++ map (f: f { message = "hello"; }) aspect.includes;
                     };
+                  };
                   aspectTwo.__functor =
-                    _:
+                    _aspect:
                     { message }:
                     {
                       classOne.bar = [ message ];
