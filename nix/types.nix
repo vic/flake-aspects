@@ -26,7 +26,7 @@ let
       chainOnly = hasChain && arity == 1;
       both = hasClass && hasChain && arity == 2;
     in
-    classOnly || chainOnly || both
+    arity == 0 || classOnly || chainOnly || both
   );
 
   functionProviderType = lib.types.either functionToAspect (lib.types.functionTo providerType);
@@ -68,11 +68,9 @@ let
             config._module.args.provides = config;
             options.itself = lib.mkOption {
               readOnly = true;
-              description = "Provides itself";
+              description = "Always provides itself";
               type = providerType;
-              default =
-                # deadnix: skip
-                { class, ... }: aspect;
+              default = _: aspect;
             };
           }
         );
