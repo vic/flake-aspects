@@ -95,7 +95,7 @@ let
             class,
             aspect-chain ? [ ],
           }:
-          resolve class aspect-chain aspect;
+          resolve class aspect-chain (aspect.__functor aspect { inherit class aspect-chain; });
       };
     }
   );
