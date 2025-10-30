@@ -66,12 +66,6 @@ let
           {
             freeformType = lib.types.attrsOf providerType;
             config._module.args.provides = config;
-            options.itself = lib.mkOption {
-              readOnly = true;
-              description = "Always provides itself";
-              type = providerType;
-              default = _: aspect;
-            };
           }
         );
       };
@@ -80,7 +74,7 @@ let
         visible = false;
         description = "Functor to default provider";
         type = lib.types.functionTo providerType;
-        default = aspect: aspect.provides.itself;
+        default = aspect: _: aspect;
       };
       options.resolve = lib.mkOption {
         internal = true;
