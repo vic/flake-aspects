@@ -406,21 +406,15 @@
                     {
                       classOne.bar = [ "should-not-be-present" ];
                       includes = [ aspects.aspectTwo ];
-                      __functor =
-                        _:
-                        # deadnix: skip
-                        { class, aspect-chain }:
-                        {
-                          includes = [
-                            { classOne.bar = [ "from-functor" ]; }
-                          ] ++ map (f: f { message = "hello"; }) aspect.includes;
-                        };
+                      __functor = _: {
+                        includes = [
+                          { classOne.bar = [ "from-functor" ]; }
+                        ] ++ map (f: f { message = "hello"; }) aspect.includes;
+                      };
                     };
                   aspectTwo.__functor =
                     _:
                     { message }:
-                    # deadnix: skip
-                    { class, aspect-chain }:
                     {
                       classOne.bar = [ message ];
                     };
