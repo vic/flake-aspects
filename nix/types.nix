@@ -26,7 +26,7 @@ let
       chainOnly = hasChain && arity == 1;
       both = hasClass && hasChain && arity == 2;
     in
-    arity == 0 || classOnly || chainOnly || both
+    classOnly || chainOnly || both
   );
 
   functionProviderType = lib.types.either functionToAspect (lib.types.functionTo providerType);
@@ -74,7 +74,11 @@ let
         visible = false;
         description = "Functor to default provider";
         type = lib.types.functionTo providerType;
-        default = aspect: _: aspect;
+        default =
+          aspect:
+          # deadnix: skip
+          { class, aspect-chain }:
+          aspect;
       };
       options.resolve = lib.mkOption {
         internal = true;
