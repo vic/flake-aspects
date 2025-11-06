@@ -86,7 +86,7 @@ Unlike `flake.modules.<class>.<aspect>` which is _flat_, aspects can be nested f
       nixos  = {};
       darwin = {};
 
-      provides.emulation = { aspect, ... }: {
+      _.emulation = { aspect, ... }: {
         nixos = {};
 
         _.nes.nixos = {};
@@ -210,18 +210,14 @@ Dependencies are managed through a powerful abstraction called **providers**. A 
 
 A provider can be either a static aspect object or a function that dynamically returns one. This mechanism enables sophisticated dependency chains, conditional logic, and parameterization.
 
-#### The Default Provider: `provides.itself`
+#### Default Provider (`__functor`)
 
-Every aspect automatically has a default provider called `itself`, located at `<aspect>.provides.itself`. This provider simply returns the aspect itself.
-
-The `with aspects; [ bar baz ]` syntax is a convenient shorthand that relies on this default:
+Each aspect is itself a provider via its hidden option `__functor` (see `nix/types.nix`). You can include aspects directly.
 
 ```nix
 # A 'foo' aspect that depends on 'bar' and 'baz' aspects.
 flake.aspects = { aspects, ... }: {
   foo.includes = with aspects; [ bar baz ];
-  # This is equivalent to:
-  # foo.includes = [ aspects.bar.provides.itself aspects.baz.provides.itself ];
 }
 ```
 
@@ -232,7 +228,7 @@ You can define custom providers to implement more complex logic. A provider func
 In this example, the `kde-desktop` aspect defines a custom `karousel` provider that only returns a module if certain conditions are met:
 
 ```nix
-flake.aspects.kde-desktop.provides.karousel = { aspect-chain, class }:
+flake.aspects.kde-desktop._.karousel = { aspect-chain, class }:
   if someCondition aspect-chain && class == "nixos" then { nixos = { ... }; } else { };
 ```
 
@@ -240,7 +236,7 @@ The `karousel` provider can then be included in another aspect:
 
 ```nix
 flake.aspects = { aspects, ... }: {
-  home-server.includes = [ aspects.kde-desktop.provides.karousel ];
+  home-server.includes = [ aspects.kde-desktop._.karousel ];
 }
 ```
 
@@ -256,7 +252,7 @@ For real-world examples, see how `vic/den` defines [auto-imports](https://github
 flake.aspects = { aspects, ... }: {
   system = {
     nixos.system.stateVersion = "25.11";
-    provides.user = userName: {
+    _.user = userName: {
       darwin.system.primaryUser = userName;
       nixos.users.${userName}.isNormalUser = true;
     };
@@ -264,7 +260,7 @@ flake.aspects = { aspects, ... }: {
 
   home-server.includes = [
     aspects.system
-    (aspects.system.provides.user "bob")
+    (aspects.system._.user "bob")
   ];
 }
 ```
