@@ -5,7 +5,7 @@ let
   aspectsType = lib.types.submodule (
     { config, ... }:
     {
-      freeformType = lib.types.attrsOf aspectSubmodule;
+      freeformType = lib.types.attrsOf providerType;
       config._module.args.aspects = config;
     }
   );
