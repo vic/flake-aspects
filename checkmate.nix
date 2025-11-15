@@ -187,18 +187,18 @@
         aspects."test resolve aspect-chain" =
           let
             flake = mkFlake {
-              flake.aspects = {
-                aspectOne =
-                  { aspect, ... }:
-                  {
+              flake.aspects =
+                { aspects, ... }:
+                {
+                  aspectOne = {
                     name = "one";
-                    includes = [ aspect.provides.dos ];
+                    includes = [ aspects.aspectOne.provides.dos ];
                     classOne.bar = [ "zzz" ];
                     provides.dos =
                       { aspect-chain, ... }:
                       {
                         name = "dos";
-                        includes = [ aspect.provides.tres ];
+                        includes = [ aspects.aspectOne.provides.tres ];
                         classOne.bar = map (x: x.name) aspect-chain;
                       };
 
@@ -209,7 +209,7 @@
                         classOne.bar = [ (lib.last aspect-chain).name ];
                       };
                   };
-              };
+                };
             };
             mod = {
               imports = [
@@ -295,26 +295,24 @@
                     ];
                   };
 
-                  aspectTwo =
-                    { aspect, ... }:
-                    {
-                      classOne.bar = [ "2" ];
-                      includes = [ aspect.provides.three-and-four-and-five ];
-                      provides =
-                        { provides, ... }:
-                        {
-                          three-and-four-and-five = {
-                            classOne.bar = [ "3" ];
-                            includes = [
-                              provides.four
-                              aspects.five
-                            ];
-                          };
-                          four = {
-                            classOne.bar = [ "4" ];
-                          };
+                  aspectTwo = {
+                    classOne.bar = [ "2" ];
+                    includes = [ aspects.aspectTwo.provides.three-and-four-and-five ];
+                    provides =
+                      { provides, ... }:
+                      {
+                        three-and-four-and-five = {
+                          classOne.bar = [ "3" ];
+                          includes = [
+                            provides.four
+                            aspects.five
+                          ];
                         };
-                    };
+                        four = {
+                          classOne.bar = [ "4" ];
+                        };
+                      };
+                  };
 
                   five.classOne.bar = [ "5" ];
                 };
@@ -412,6 +410,39 @@
                   };
                   aspectTwo.__functor =
                     _aspect:
+                    { message }:
+                    {
+                      classOne.bar = [ message ];
+                    };
+                };
+            };
+
+            expr = (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
+            expected = [
+              "hello"
+              "from-functor"
+            ];
+          in
+          {
+            inherit expr expected;
+          };
+
+        aspects."test define top-level context-aware aspect" =
+          let
+            flake = mkFlake {
+              flake.aspects =
+                { aspects, ... }:
+                {
+                  aspectOne = {
+                    classOne.bar = [ "should-not-be-present" ];
+                    includes = [ aspects.aspectTwo ];
+                    __functor = aspect: {
+                      includes = [
+                        { classOne.bar = [ "from-functor" ]; }
+                      ] ++ map (f: f { message = "hello"; }) aspect.includes;
+                    };
+                  };
+                  aspectTwo =
                     { message }:
                     {
                       classOne.bar = [ message ];
