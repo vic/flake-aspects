@@ -362,8 +362,12 @@
               flake.aspects =
                 { aspects, ... }:
                 {
-                  aspectOne.includes = [ (aspects.aspectTwo { message = "hello"; }) ];
-                  aspectOne.classOne = { }; # required for propagation
+                  aspectOne =
+                    { aspect, ... }:
+                    {
+                      includes = [ (aspects.aspectTwo { message = "hello ${aspect.name}"; }) ];
+                      classOne = { }; # required for propagation
+                    };
 
                   aspectTwo.__functor =
                     _:
@@ -372,6 +376,7 @@
                     { aspect, ... }:
                     {
                       classOne.bar = [
+                        "foo"
                         aspect.name
                         message
                         class
@@ -383,8 +388,9 @@
 
             expr = (evalMod "classOne" flake.modules.classOne.aspectOne).bar;
             expected = [
+              "foo"
               "<function body>"
-              "hello"
+              "hello aspectOne"
               "classOne"
               "aspectOne"
             ];

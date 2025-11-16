@@ -5,7 +5,7 @@ let
   aspectsType = lib.types.submodule (
     { config, ... }:
     {
-      freeformType = lib.types.attrsOf providerType;
+      freeformType = lib.types.attrsOf (lib.types.either aspectSubmoduleAttrs providerType);
       config._module.args.aspects = config;
     }
   );
@@ -31,6 +31,23 @@ let
 
   functionProviderType = lib.types.either functionToAspect (lib.types.functionTo providerType);
   providerType = lib.types.either functionProviderType aspectSubmodule;
+
+  aspectSubmoduleAttrs = lib.types.addCheck aspectSubmodule (
+    m: (!builtins.isFunction m) || (isAspectSubmoduleFn m)
+  );
+  isAspectSubmoduleFn =
+    m:
+    lib.pipe m [
+      lib.functionArgs
+      lib.attrNames
+      (lib.intersectLists [
+        "lib"
+        "config"
+        "options"
+        "aspect"
+      ])
+      (x: lib.length x > 0)
+    ];
 
   aspectSubmodule = lib.types.submodule (
     {
