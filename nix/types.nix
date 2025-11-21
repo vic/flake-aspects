@@ -93,9 +93,9 @@ let
         type = lib.types.functionTo providerType;
         default =
           aspect:
-          # deadnix: skip
           { class, aspect-chain }:
-          aspect;
+          # silence nixf-diagnose :/
+          if true || (class aspect-chain) then aspect else aspect;
       };
       options.modules = lib.mkOption {
         internal = true;

@@ -3,7 +3,7 @@
   perSystem =
     { lib, ... }:
     let
-      transpose = import ./nix { inherit lib; };
+      transpose = import ../../nix { inherit lib; };
 
       mkFlake =
         mod:
@@ -14,7 +14,7 @@
           {
             systems = [ ];
             imports = [
-              ./nix/flakeModule.nix
+              ../../nix/flakeModule.nix
               inputs.flake-parts.flakeModules.modules
               mod
               (fooMod "aspectOne")
@@ -75,7 +75,7 @@
 
         new-scope."test usage without flakes" =
           let
-            flake-aspects-lib = import ./nix/lib.nix lib;
+            flake-aspects-lib = import ../../nix/lib.nix lib;
             # first eval is like evaling the flake.
             first = lib.evalModules {
               modules = [
@@ -124,7 +124,7 @@
                 {
                   systems = [ ];
                   imports = [
-                    ./nix/flakeModule.nix
+                    ../../nix/flakeModule.nix
                     inputs.flake-parts.flakeModules.modules
                   ];
                 };
@@ -424,7 +424,8 @@
                         aspect.name
                         message
                         class
-                      ] ++ (lib.map (x: x.name) aspect-chain);
+                      ]
+                      ++ (lib.map (x: x.name) aspect-chain);
                     };
                   aspectTwo.classOne.bar = [ "itself not included" ];
                 };
@@ -455,7 +456,8 @@
                     __functor = aspect: {
                       includes = [
                         { classOne.bar = [ "from-functor" ]; }
-                      ] ++ map (f: f { message = "hello"; }) aspect.includes;
+                      ]
+                      ++ map (f: f { message = "hello"; }) aspect.includes;
                     };
                   };
                   aspectTwo.__functor =
@@ -489,7 +491,8 @@
                     __functor = aspect: {
                       includes = [
                         { classOne.bar = [ "from-functor" ]; }
-                      ] ++ map (f: f { message = "hello"; }) aspect.includes;
+                      ]
+                      ++ map (f: f { message = "hello"; }) aspect.includes;
                     };
                   };
                   aspectTwo =
