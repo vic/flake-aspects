@@ -97,6 +97,14 @@ let
           { class, aspect-chain }:
           aspect;
       };
+      options.modules = lib.mkOption {
+        internal = true;
+        visible = false;
+        readOnly = true;
+        description = "resolved modules from this aspect";
+        type = lib.types.attrsOf lib.types.deferredModule;
+        default = lib.mapAttrs (class: _: aspect.resolve { inherit class; }) aspect;
+      };
       options.resolve = lib.mkOption {
         internal = true;
         visible = false;
