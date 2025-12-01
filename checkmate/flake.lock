@@ -128,14 +128,18 @@
     },
     "target": {
       "locked": {
-        "path": "..",
-        "type": "path"
+        "lastModified": 1763763502,
+        "narHash": "sha256-J78S02ZbBclWz7WKF8C+kHUca9/KdHtSeRgO/WF9LjY=",
+        "owner": "vic",
+        "repo": "flake-aspects",
+        "rev": "83c8e44186bc9631509a55cf5a053950ecd3dc30",
+        "type": "github"
       },
       "original": {
-        "path": "..",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "vic",
+        "repo": "flake-aspects",
+        "type": "github"
+      }
     },
     "treefmt-nix": {
       "inputs": {
