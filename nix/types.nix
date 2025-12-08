@@ -5,7 +5,7 @@ let
   aspectsType = lib.types.submodule (
     { config, ... }:
     {
-      freeformType = lib.types.attrsOf (lib.types.either aspectSubmoduleAttrs providerType);
+      freeformType = lib.types.attrsOf providerType;
       config._module.args.aspects = config;
     }
   );
@@ -30,7 +30,7 @@ let
   );
 
   functionProviderType = lib.types.either functionToAspect (lib.types.functionTo providerType);
-  providerType = lib.types.either functionProviderType aspectSubmodule;
+  providerType = lib.types.either aspectSubmoduleAttrs functionProviderType;
 
   aspectSubmoduleAttrs = lib.types.addCheck aspectSubmodule (
     m: (!builtins.isFunction m) || (isAspectSubmoduleFn m)
@@ -49,80 +49,99 @@ let
       (x: lib.length x > 0)
     ];
 
-  aspectSubmodule = lib.types.submodule (
-    {
-      name,
-      aspect,
-      config,
-      ...
-    }:
-    {
-      freeformType = lib.types.attrsOf lib.types.deferredModule;
-      config._module.args.aspect = config;
-      imports = [ (lib.mkAliasOptionModule [ "_" ] [ "provides" ]) ];
-      options.name = lib.mkOption {
-        description = "Aspect name";
-        default = name;
-        type = lib.types.str;
-      };
-      options.description = lib.mkOption {
-        description = "Aspect description";
-        default = "Aspect ${name}";
-        type = lib.types.str;
-      };
-      options.includes = lib.mkOption {
-        description = "Providers to ask aspects from";
-        type = lib.types.listOf providerType;
-        default = [ ];
-      };
-      options.provides = lib.mkOption {
-        description = "Providers of aspect for other aspects";
-        default = { };
-        type = lib.types.submodule (
-          { config, ... }:
-          {
-            freeformType = lib.types.attrsOf providerType;
-            config._module.args.provides = config;
-          }
-        );
-      };
-      options.__functor = lib.mkOption {
-        internal = true;
-        visible = false;
-        description = "Functor to default provider";
-        type = lib.types.functionTo providerType;
-        default =
-          aspect:
-          { class, aspect-chain }:
-          # silence nixf-diagnose :/
-          if true || (class aspect-chain) then aspect else aspect;
-      };
-      options.modules = lib.mkOption {
-        internal = true;
-        visible = false;
-        readOnly = true;
-        description = "resolved modules from this aspect";
-        type = lib.types.attrsOf lib.types.deferredModule;
-        default = lib.mapAttrs (class: _: aspect.resolve { inherit class; }) aspect;
-      };
-      options.resolve = lib.mkOption {
-        internal = true;
-        visible = false;
-        readOnly = true;
-        description = "function to resolve a module from this aspect";
-        type = lib.types.functionTo lib.types.deferredModule;
-        default =
-          {
-            class,
-            aspect-chain ? [ ],
-          }:
-          resolve class aspect-chain (aspect {
-            inherit class aspect-chain;
-          });
-      };
-    }
+  aspectSubmodule = aspectSubmoduleMerge (
+    lib.types.submodule (
+      {
+        name,
+        aspect,
+        config,
+        ...
+      }:
+      {
+        freeformType = lib.types.attrsOf lib.types.deferredModule;
+        config._module.args.aspect = config;
+        imports = [ (lib.mkAliasOptionModule [ "_" ] [ "provides" ]) ];
+        options.name = lib.mkOption {
+          description = "Aspect name";
+          default = name;
+          type = lib.types.str;
+        };
+        options.description = lib.mkOption {
+          description = "Aspect description";
+          default = "Aspect ${name}";
+          type = lib.types.str;
+        };
+        options.includes = lib.mkOption {
+          description = "Providers to ask aspects from";
+          type = lib.types.listOf providerType;
+          default = [ ];
+        };
+        options.provides = lib.mkOption {
+          description = "Providers of aspect for other aspects";
+          default = { };
+          type = aspectsType;
+        };
+        options.__functor = lib.mkOption {
+          internal = true;
+          visible = false;
+          description = "Functor to default provider";
+          type = lib.types.functionTo providerType;
+          default =
+            aspect:
+            { class, aspect-chain }:
+            # silence nixf-diagnose :/
+            if true || (class aspect-chain) then aspect else aspect;
+        };
+        options.modules = lib.mkOption {
+          internal = true;
+          visible = false;
+          readOnly = true;
+          description = "resolved modules from this aspect";
+          type = lib.types.attrsOf lib.types.deferredModule;
+          default = lib.mapAttrs (class: _: aspect.resolve { inherit class; }) aspect;
+        };
+        options.resolve = lib.mkOption {
+          internal = true;
+          visible = false;
+          readOnly = true;
+          description = "function to resolve a module from this aspect";
+          type = lib.types.functionTo lib.types.deferredModule;
+          default =
+            {
+              class,
+              aspect-chain ? [ ],
+            }:
+            resolve class aspect-chain (aspect {
+              inherit class aspect-chain;
+            });
+        };
+      }
+    )
   );
 
+  aspectSubmoduleMerge =
+    tpe:
+    let
+      mrg = tpe.merge;
+      clearDef =
+        { file, value }:
+        {
+          inherit file;
+          value =
+            if builtins.isAttrs value && value ? modules then
+              builtins.removeAttrs value [
+                "resolve"
+                "modules"
+                "provides"
+              ]
+            else
+              value;
+        };
+    in
+    tpe
+    // {
+      merge = loc: defs: (mrg loc (lib.map clearDef defs));
+    };
 in
 {
   inherit
