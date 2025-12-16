@@ -1,6 +1,5 @@
 {
   mkFlake,
-  lib,
   evalMod,
   ...
 }:

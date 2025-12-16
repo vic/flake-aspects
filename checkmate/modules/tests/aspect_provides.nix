@@ -2,7 +2,6 @@
   lib,
   mkFlake,
   evalMod,
-  fooOpt,
   ...
 }:
 {
