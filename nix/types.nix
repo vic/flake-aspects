@@ -49,6 +49,13 @@ let
       (x: lib.length x > 0)
     ];
 
+  ignoredType = lib.types.mkOptionType {
+    name = "ignored type";
+    description = "ignored values";
+    merge = _loc: _defs: null;
+    check = _: true;
+  };
+
   aspectSubmodule = lib.types.submodule (
     {
       name,
@@ -99,36 +106,19 @@ let
       options.modules = lib.mkOption {
         internal = true;
         visible = false;
+        readOnly = true;
         description = "resolved modules from this aspect";
-        # Use a custom type that always takes the last value (no merging)
-        type = lib.types.mkOptionType {
-          name = "aspectModules";
-          description = "resolved modules from aspect";
-          merge = _loc: _defs: lib.mapAttrs (class: _: config.resolve { inherit class; }) config;
-          check = _: true;
-        };
-        default = lib.mapAttrs (class: _: config.resolve { inherit class; }) config;
+        type = ignoredType;
+        apply = _: lib.mapAttrs (class: _: config.resolve { inherit class; }) config;
       };
       options.resolve = lib.mkOption {
         internal = true;
         visible = false;
+        readOnly = true;
         description = "function to resolve a module from this aspect";
-        # Use a custom type that always takes the last value (no merging)
-        type = lib.types.mkOptionType {
-          name = "aspectResolve";
-          description = "resolve function for aspect";
-          merge =
-            _loc: _defs:
-            {
-              class,
-              aspect-chain ? [ ],
-            }:
-            resolve class aspect-chain (config {
-              inherit class aspect-chain;
-            });
-          check = _: true;
-        };
-        default =
+        type = ignoredType;
+        apply =
+          _:
           {
             class,
             aspect-chain ? [ ],
