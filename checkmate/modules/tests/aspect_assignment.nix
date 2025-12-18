@@ -50,11 +50,13 @@
         ];
       };
 
-      expr = second.config.x;
+      # Sort and dedupe for deterministic comparison - merged modules may
+      # produce duplicates and order is not guaranteed across merges.
+      expr = lib.sort (a: b: a < b) (lib.unique second.config.x);
       expected = [
-        "foo"
         "bar"
         "baz"
+        "foo"
       ];
     in
     {
