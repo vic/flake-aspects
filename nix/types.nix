@@ -82,7 +82,7 @@ let
           { config, ... }:
           {
             freeformType = lib.types.attrsOf providerType;
-            config._module.args.provides = config;
+            config._module.args.aspects = config;
           }
         );
       };
