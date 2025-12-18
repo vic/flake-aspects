@@ -49,10 +49,16 @@ let
       (x: lib.length x > 0)
     ];
 
+  ignoredType = lib.types.mkOptionType {
+    name = "ignored type";
+    description = "ignored values";
+    merge = _loc: _defs: null;
+    check = _: true;
+  };
+
   aspectSubmodule = lib.types.submodule (
     {
       name,
-      aspect,
       config,
       ...
     }:
@@ -102,21 +108,22 @@ let
         visible = false;
         readOnly = true;
         description = "resolved modules from this aspect";
-        type = lib.types.attrsOf lib.types.deferredModule;
-        default = lib.mapAttrs (class: _: aspect.resolve { inherit class; }) aspect;
+        type = ignoredType;
+        apply = _: lib.mapAttrs (class: _: config.resolve { inherit class; }) config;
       };
       options.resolve = lib.mkOption {
         internal = true;
         visible = false;
         readOnly = true;
         description = "function to resolve a module from this aspect";
-        type = lib.types.functionTo lib.types.deferredModule;
-        default =
+        type = ignoredType;
+        apply =
+          _:
           {
             class,
             aspect-chain ? [ ],
           }:
-          resolve class aspect-chain (aspect {
+          resolve class aspect-chain (config {
             inherit class aspect-chain;
           });
       };
