@@ -52,7 +52,6 @@ let
   aspectSubmodule = lib.types.submodule (
     {
       name,
-      aspect,
       config,
       ...
     }:
@@ -100,23 +99,41 @@ let
       options.modules = lib.mkOption {
         internal = true;
         visible = false;
-        readOnly = true;
         description = "resolved modules from this aspect";
-        type = lib.types.attrsOf lib.types.deferredModule;
-        default = lib.mapAttrs (class: _: aspect.resolve { inherit class; }) aspect;
+        # Use a custom type that always takes the last value (no merging)
+        type = lib.types.mkOptionType {
+          name = "aspectModules";
+          description = "resolved modules from aspect";
+          merge = _loc: _defs: lib.mapAttrs (class: _: config.resolve { inherit class; }) config;
+          check = _: true;
+        };
+        default = lib.mapAttrs (class: _: config.resolve { inherit class; }) config;
       };
       options.resolve = lib.mkOption {
         internal = true;
         visible = false;
-        readOnly = true;
         description = "function to resolve a module from this aspect";
-        type = lib.types.functionTo lib.types.deferredModule;
+        # Use a custom type that always takes the last value (no merging)
+        type = lib.types.mkOptionType {
+          name = "aspectResolve";
+          description = "resolve function for aspect";
+          merge =
+            _loc: _defs:
+            {
+              class,
+              aspect-chain ? [ ],
+            }:
+            resolve class aspect-chain (config {
+              inherit class aspect-chain;
+            });
+          check = _: true;
+        };
         default =
           {
             class,
             aspect-chain ? [ ],
           }:
-          resolve class aspect-chain (aspect {
+          resolve class aspect-chain (config {
             inherit class aspect-chain;
           });
       };
