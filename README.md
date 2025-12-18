@@ -274,6 +274,6 @@ For convenience, `_` is an alias for `provides`. This allows for more concise ch
 ## Testing
 
 ```shell
-nix run ./checkmate#fmt --override-input target .
-nix flake check ./checkmate --override-input target . -L
+nix run github:vic/checkmate#fmt --override-input target .
+nix flake check github:vic/checkmate --override-input target . -L
 ```
