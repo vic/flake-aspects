@@ -1,22 +1,14 @@
-# usage:
-#
-# { inputs, ... }: {
-#   imports = [ (new-scope "foo") ];
-#   foo.aspects.<aspect> = ...;
-#   # and use foo.modules.<class>.<aspect>
-# }
-#
-# returns a nix module that defines the ${name} option having:
-#
-#   options.${name}.aspects # for user
-#   options.${name}.modules # read-only resolved modules.
-#
-# for lower-level usage like using other option names, see new.nix.
+# Creates named aspect scopes: ${name}.aspects and ${name}.modules
+# Enables multiple independent aspect namespaces
 new: name:
 { config, lib, ... }:
+# Invoke new() to create ${name}.aspects and ${name}.modules
 new (option: transposed: {
   options.${name} = {
+    # User-facing aspects input
     aspects = option;
+
+    # Computed modules output (read-only)
     modules = lib.mkOption {
       readOnly = true;
       default = transposed;
