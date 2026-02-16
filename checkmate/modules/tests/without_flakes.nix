@@ -1,13 +1,12 @@
-{ lib, targetLib, ... }:
+{ lib, new-scope, ... }:
 {
 
   flake.tests."test usage without flakes" =
     let
-      flake-aspects-lib = import targetLib lib;
       # first eval is like evaling the flake.
       first = lib.evalModules {
         modules = [
-          (flake-aspects-lib.new-scope "hello")
+          (new-scope "hello")
           {
             hello.aspects =
               { aspects, ... }:
