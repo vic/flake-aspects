@@ -10,7 +10,9 @@ let
     mod:
     inputs.flake-parts.lib.mkFlake
       {
-        inputs.self = [ ];
+        inputs.self = {
+          outPath = ./.;
+        };
       }
       {
         systems = [ ];
@@ -55,10 +57,9 @@ let
     }).config;
 in
 {
-  _module.args = {
+  _module.args = (import targetLib lib) // {
     inherit
       transpose
-      targetLib
       targetMod
       targetNix
       ;

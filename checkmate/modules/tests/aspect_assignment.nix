@@ -1,4 +1,4 @@
-{ lib, targetLib, ... }:
+{ lib, new-scope, ... }:
 {
   # This test verifies that we can define aspects inside
   # an scope and then merge them in another scope.
@@ -7,14 +7,12 @@
   # try to merge aspects from different sources, local, and remote flakes.
   flake.tests."test-assign-aspects-on-scopes" =
     let
-      flake-aspects-lib = import targetLib lib;
-
       first = lib.evalModules {
         modules = [
           # each scope creates a new <name>.aspects tree.
-          (flake-aspects-lib.new-scope "foo")
-          (flake-aspects-lib.new-scope "bar")
-          (flake-aspects-lib.new-scope "baz")
+          (new-scope "foo")
+          (new-scope "bar")
+          (new-scope "baz")
           # create a._.b._.c aspect on each namespace
           # we will be trying to merge them for this test.
           {

@@ -15,6 +15,9 @@ let
   # Aspect transposition with resolution
   aspects = import ./aspects.nix lib;
 
+  # Dynamic class forwarding into submodules
+  forward = import ./forward.nix lib;
+
   # Low-level scope factory: parameterized by callback
   new = import ./new.nix lib;
 
@@ -28,5 +31,6 @@ in
     aspects
     new
     new-scope
+    forward
     ;
 }
