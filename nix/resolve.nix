@@ -13,10 +13,15 @@ let
 
   # Main resolution: extract class config and recursively resolve includes
   resolve = class: aspect-chain: provided: {
-    imports = lib.flatten [
-      (provided.${class} or { })
-      (lib.map (include class (aspect-chain ++ [ provided ])) provided.includes)
-    ];
+    imports =
+      let
+        config = provided.${class} or { };
+        includes = provided.includes or [ ];
+      in
+      lib.flatten [
+        config
+        (lib.map (include class (aspect-chain ++ [ provided ])) includes)
+      ];
   };
 
 in
