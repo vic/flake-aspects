@@ -20,7 +20,7 @@ let
       in
       lib.flatten [
         config
-        (lib.map (include class (aspect-chain ++ [ provided ])) includes)
+        (lib.map (include class ([ provided ] ++ aspect-chain)) includes)
       ];
   };
 
