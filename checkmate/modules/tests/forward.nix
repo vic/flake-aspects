@@ -21,14 +21,10 @@
 
       targetSubmodule = {
         options.targetMod = lib.mkOption {
-          type = lib.types.submoduleWith {
-            modules = [
-              {
-                options.names = lib.mkOption {
-                  type = lib.types.listOf lib.types.str;
-                };
-              }
-            ];
+          type = lib.types.submodule {
+            options.names = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+            };
           };
         };
       };

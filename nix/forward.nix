@@ -55,7 +55,12 @@ let
       path = intoPath item;
       aspect = fromAspect item;
       module = aspect.resolve { class = from; };
-      config = lib.setAttrByPath path { imports = [ module ]; };
+      config = lib.setAttrByPath path (
+        { ... }:
+        {
+          imports = [ module ];
+        }
+      );
     in
     {
       ${into} = config;
