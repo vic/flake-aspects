@@ -149,7 +149,7 @@ Tests: [transpose_swap](checkmate/modules/tests/transpose_swap.nix), [transpose_
 
 ### Resolution: `resolve` ([nix/resolve.nix](nix/resolve.nix))
 
-Recursive dependency resolver. Given a `class` and an `aspect-chain` (the call stack of aspects that led here -- most recent first), it extracts the class-specific config and recursively resolves all `includes`.
+Recursive dependency resolver. Given a `class` and an `aspect-chain` (the call stack of aspects that led here -- most recent last), it extracts the class-specific config and recursively resolves all `includes`.
 
 The `aspect-chain` lets providers know who is including them and make decisions based on call context. Tests: [aspect_chain](checkmate/modules/tests/aspect_chain.nix), [aspect_modules_resolved](checkmate/modules/tests/aspect_modules_resolved.nix).
 
