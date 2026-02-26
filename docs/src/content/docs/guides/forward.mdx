@@ -1,0 +1,85 @@
+---
+title: Forward Across Classes
+description: Route resolved modules from one class into a submodule of another.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## What `forward` does
+
+[`forward`](https://github.com/vic/flake-aspects/blob/main/nix/forward.nix) resolves an aspect for one class and injects the result into a submodule path of another class. This enables cross-class configuration routing.
+
+The canonical use case: forward `homeManager` modules into `nixos.home-manager.users.<name>`.
+
+## Arguments
+
+```nix
+forward {
+  each       = [ items ];            # list of items to iterate over
+  fromClass  = item: "sourceClass";  # class to resolve from
+  intoClass  = item: "targetClass";  # class to inject into
+  intoPath   = item: [ "path" ];     # submodule path in targetClass
+  fromAspect = item: aspect;         # aspect to resolve
+}
+```
+
+| Parameter | Signature | Purpose |
+|---|---|---|
+| `each` | `listOf any` | Items to iterate. One forward per item. |
+| `fromClass` | `item → string` | Source class name to resolve |
+| `intoClass` | `item → string` | Target class name to inject into |
+| `intoPath` | `item → listOf string` | Attribute path for the submodule in target |
+| `fromAspect` | `item → aspect` | The aspect to resolve for `fromClass` |
+
+## Return value
+
+`forward` returns `{ includes = [ ... ]; }` — an aspect with one include per item. Each include:
+
+1. Resolves `fromAspect item` for `fromClass item`
+2. Wraps the resolved module as `{ imports = [ module ]; }` at `intoPath item`
+3. Places the result under `intoClass item`
+
+## Example
+
+```nix
+flake.aspects = { aspects, ... }: {
+  my-host = {
+    targetClass = {
+      imports = [ targetSubmodule ];
+      targetMod.names = [ "from-target" ];
+    };
+    sourceClass.names = [ "from-source" ];
+    includes = [
+      ({ class, aspect-chain }: forward {
+        each = [ "source" ];
+        fromClass = item: "${item}Class";
+        intoClass = _: "targetClass";
+        intoPath = _: [ "targetMod" ];
+        fromAspect = _: lib.head aspect-chain;
+      })
+    ];
+  };
+};
+```
+
+Resolving for `"targetClass"` merges `["from-target", "from-source"]`.
+
+<Aside>
+  Test: [`forward.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/forward.nix)
+</Aside>
+
+## Real-world: Home-Manager into NixOS
+
+This is how [Den](https://github.com/vic/den) forwards user home-manager configs into host NixOS:
+
+```nix
+hmSupport = { host }: forward {
+  each = host.users;
+  fromClass = _user: "homeManager";
+  intoClass = _user: "nixos";
+  intoPath = user: [ "home-manager" "users" user.userName ];
+  fromAspect = user: den.aspects.${user.userName};
+};
+```
+
+Each user's `homeManager` aspect gets resolved and placed at `nixos.home-manager.users.<name>`.

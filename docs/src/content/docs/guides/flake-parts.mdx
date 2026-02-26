@@ -1,0 +1,82 @@
+---
+title: With flake-parts
+description: Using flake-aspects as a flake-parts module.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Setup
+
+Add `flake-aspects` to your flake inputs and import its `flakeModule`:
+
+```nix
+{
+  inputs.flake-aspects.url = "github:vic/flake-aspects";
+
+  outputs = { flake-parts, flake-aspects, nixpkgs, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ flake-aspects.flakeModule ];
+
+      flake.aspects = {
+        my-desktop = {
+          nixos  = { pkgs, ... }: { environment.systemPackages = [ pkgs.firefox ]; };
+          darwin = { pkgs, ... }: { environment.systemPackages = [ pkgs.firefox ]; };
+        };
+        my-server = {
+          nixos = { services.nginx.enable = true; };
+        };
+      };
+
+      flake.nixosConfigurations.workstation = nixpkgs.lib.nixosSystem {
+        modules = [
+          inputs.self.modules.nixos.my-desktop
+        ];
+      };
+    };
+}
+```
+
+## How it works
+
+The [`flakeModule`](https://github.com/vic/flake-aspects/blob/main/nix/flakeModule.nix) calls [`new`](/reference/api/#new) with a callback that:
+
+1. Creates `flake.aspects` as a user-facing option (type: `aspectsType`).
+2. Sets `flake.modules` to the transposed + resolved output.
+
+After evaluation, `flake.modules.<class>.<aspect>` contains fully-resolved Nix modules ready for use in `nixosSystem`, `darwinSystem`, `evalModules`, etc.
+
+## With flake-parts `modules` output
+
+If you also import `flake-parts.flakeModules.modules`, the resolved modules are exposed as `inputs.self.modules`:
+
+```nix
+imports = [
+  flake-aspects.flakeModule
+  flake-parts.flakeModules.modules  # exposes flake.modules as output
+];
+```
+
+Then in your system configs: `inputs.self.modules.nixos.my-desktop`.
+
+<Aside>
+  Test: [`tranpose_flake_modules.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/tranpose_flake_modules.nix) ·
+  [`default_empty.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/default_empty.nix)
+</Aside>
+
+## Using dependencies
+
+Aspects can reference each other via the `aspects` fixpoint argument:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  base-tools = {
+    nixos = { pkgs, ... }: { environment.systemPackages = with pkgs; [ git curl ]; };
+  };
+  workstation = {
+    includes = [ aspects.base-tools ];
+    nixos = { pkgs, ... }: { environment.systemPackages = [ pkgs.vscode ]; };
+  };
+};
+```
+
+Resolving `workstation` for `"nixos"` produces `{ imports = [ workstation-nixos, base-tools-nixos ] }`.

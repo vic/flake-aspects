@@ -1,0 +1,65 @@
+---
+title: Transpose
+description: The generic 2-level attribute set transposition primitive.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## What it does
+
+`transpose` swaps the outer two levels of a nested attribute set:
+
+```nix
+transpose { a.b.c = 1; }
+# ⇒ { b.a.c = 1; }
+```
+
+Values below the second level are preserved as-is. Common children merge under one parent:
+
+```nix
+transpose { a.x = 1; b.x = 2; }
+# ⇒ { x = { a = 1; b = 2; }; }
+```
+
+<Aside>
+  Tests: [`transpose_swap.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/transpose_swap.nix) ·
+  [`transpose_common.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/transpose_common.nix)
+</Aside>
+
+## Source: [`nix/default.nix`](https://github.com/vic/flake-aspects/blob/main/nix/default.nix)
+
+The implementation is a three-phase pipeline:
+
+1. **Deconstruct** — `mapAttrsToList` over all parents, producing `{ child, parent, value }` items via `emit`.
+2. **Flatten** — collapse the nested lists into a flat list.
+3. **Reconstruct** — `foldl` items back into the transposed structure.
+
+## The `emit` hook
+
+`emit` is a function `{ child, parent, value } → [{ parent, child, value }]`.
+
+Default is `lib.singleton` — identity transformation, one-to-one mapping.
+
+You can use `emit` to:
+- **Filter**: return `[]` to drop items during transposition.
+- **Modify**: change the value, rename parent/child.
+- **Multiply**: return multiple items from a single input.
+
+## How aspects exploit `emit`
+
+[`nix/aspects.nix`](https://github.com/vic/flake-aspects/blob/main/nix/aspects.nix) supplies a custom `emit` that calls [`resolve`](/concepts/aspects/#resolution) on each item:
+
+```nix
+emit = transposed: [{
+  inherit (transposed) parent child;
+  value = aspects.${transposed.child}.resolve {
+    class = transposed.parent;
+  };
+}];
+```
+
+This intercepts every `<aspect>.<class>` → `<class>.<aspect>` transposition and replaces the raw value with a fully-resolved module that includes all transitive dependencies.
+
+<Aside>
+  Test: [`tranpose_flake_modules.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/tranpose_flake_modules.nix)
+</Aside>

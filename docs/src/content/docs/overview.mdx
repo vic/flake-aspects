@@ -1,0 +1,69 @@
+---
+title: Overview
+description: Everything in flake-aspects at a glance.
+---
+
+import { Card, CardGrid, LinkButton } from '@astrojs/starlight/components';
+
+## Core Concepts
+
+<CardGrid>
+  <Card title="Transpose" icon="random">
+    Generic 2-level attribute set transposition: `{ a.b = v }` → `{ b.a = v }`. Parameterized by an `emit` hook.
+    <LinkButton href="/concepts/transpose" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Aspects & Resolution" icon="puzzle">
+    Aspect submodules with `includes` (dependency graph) and per-class configs. Recursive resolution collects all transitive class-specific modules.
+    <LinkButton href="/concepts/aspects" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Providers & Fixpoint" icon="setting">
+    Nested sub-aspects via `provides` / `_`. Fixpoint semantics let providers reference siblings and top-level aspects.
+    <LinkButton href="/concepts/providers" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+</CardGrid>
+
+## Guides
+
+<CardGrid>
+  <Card title="With flake-parts" icon="rocket">
+    The `flakeModule` wires `flake.aspects` → `flake.modules` automatically. Minimal setup.
+    <LinkButton href="/guides/flake-parts" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Without Flakes" icon="open-book">
+    Use `new-scope` with `lib.evalModules` for isolated namespaces. No flake-parts dependency needed.
+    <LinkButton href="/guides/standalone" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Cross-Aspect Dependencies" icon="list-format">
+    `includes` forms a DAG. Only classes present on the included aspect propagate during resolution.
+    <LinkButton href="/guides/dependencies" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Parametric Aspects" icon="seti:config">
+    Curried providers with arguments at inclusion time. Works at both `provides` and top levels.
+    <LinkButton href="/guides/parametric" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="__functor Override" icon="pencil">
+    Intercept inclusion. Dispatch different configs based on `class` and `aspect-chain` context.
+    <LinkButton href="/guides/functor" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Forward Across Classes" icon="right-arrow">
+    Route resolved modules from one class into a submodule path of another class.
+    <LinkButton href="/guides/forward" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+</CardGrid>
+
+## Reference
+
+<CardGrid>
+  <Card title="API" icon="seti:code-search">
+    Full export table: `transpose`, `types`, `aspects`, `new`, `new-scope`, `forward`.
+    <LinkButton href="/reference/api" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Type System" icon="document">
+    `aspectsType`, `aspectSubmodule`, `providerType` — the Nix option types that validate aspect definitions.
+    <LinkButton href="/reference/types" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+  <Card title="Test Suite" icon="seti:test">
+    16 test files covering every feature. How to run and read them.
+    <LinkButton href="/reference/tests" variant="minimal" icon="right-arrow">Learn More</LinkButton>
+  </Card>
+</CardGrid>

@@ -1,0 +1,73 @@
+---
+title: flake-aspects
+description: Aspect-oriented transposition for Nix module systems.
+template: splash
+hero:
+  tagline: "<code>&lt;aspect&gt;.&lt;class&gt;</code> transposition for Nix — dependency-free, composable, cross-class."
+  image:
+    html: |
+      <img width="400" height="400" src="https://github.com/user-attachments/assets/dd28ce8d-f727-4e31-a192-d3002ee8984e" />
+  actions:
+    - text: Get Started
+      link: /guides/flake-parts/
+      icon: right-arrow
+    - text: Overview
+      link: /overview/
+      variant: minimal
+    - text: Source Code
+      link: https://github.com/vic/flake-aspects
+      icon: github
+      variant: secondary
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+**flake-aspects** is a small, dependency-free Nix library that transposes
+`<aspect>.<class>` into `<class>.<aspect>` — the standard `flake.modules` layout.
+
+On top of transposition, it provides a composable dependency graph via `includes`,
+nestable sub-aspects via `provides` (alias `_`), parametric curried providers,
+context-aware `__functor` override, and cross-class `forward`.
+
+<CardGrid>
+  <Card title="Zero dependencies" icon="approve-check">
+    Pure Nix. Works with flakes, without flakes, with flake-parts, or standalone via `lib.evalModules`.
+  </Card>
+  <Card title="Any Nix class" icon="puzzle">
+    NixOS, Darwin, Home-Manager, NixVim, Terranix — any configuration class expressible as a Nix module.
+  </Card>
+  <Card title="Composable graph" icon="random">
+    Aspects declare `includes` forming a dependency DAG. Resolution collects all class-specific configs transitively.
+  </Card>
+  <Card title="Parametric" icon="setting">
+    Curried functions as providers. Pass arguments at inclusion time. Override behavior with `__functor`.
+  </Card>
+</CardGrid>
+
+
+```nix
+# input: flake.aspects
+{
+  vim-btw = {
+    nixos = { ... };
+    darwin = { ... };
+    homeManager = { ... };
+  };
+  tiling-desktop = {
+    includes = [ aspects.vim-btw ];
+    nixos = { ... };
+  };
+}
+```
+
+```nix
+# output: flake.modules (transposed + resolved)
+{
+  nixos.vim-btw = { imports = [ ... ]; };
+  nixos.tiling-desktop = { imports = [ nixos-config, vim-btw-nixos ]; };
+  darwin.vim-btw = { imports = [ ... ]; };
+  homeManager.vim-btw = { imports = [ ... ]; };
+}
+```
+
+Used by [Den](https://github.com/vic/den) and others for dendritic Nix setups.

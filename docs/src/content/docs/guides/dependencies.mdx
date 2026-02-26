@@ -1,0 +1,86 @@
+---
+title: Cross-Aspect Dependencies
+description: Using includes to form a dependency graph between aspects.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## `includes`
+
+Every aspect can declare an `includes` list — references to other aspects (or providers) that should be resolved together:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  server = {
+    includes = with aspects; [ networking monitoring ];
+    nixos = { services.nginx.enable = true; };
+  };
+  networking.nixos = { networking.firewall.enable = true; };
+  monitoring.nixos = { services.prometheus.enable = true; };
+};
+```
+
+When `server` is resolved for class `"nixos"`, the result is:
+
+```nix
+{
+  imports = [
+    { services.nginx.enable = true; }       # server.nixos
+    { networking.firewall.enable = true; }   # networking.nixos
+    { services.prometheus.enable = true; }   # monitoring.nixos
+  ];
+}
+```
+
+Only classes **present on the included aspect** propagate. If `networking` has no `darwin` key, nothing from `networking` appears when resolving for `"darwin"`.
+
+<Aside>
+  Test: [`aspect_dependencies.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_dependencies.nix)
+</Aside>
+
+## Transitive resolution
+
+Dependencies resolve transitively. If `A` includes `B` and `B` includes `C`, resolving `A` collects configs from `A`, `B`, and `C`:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  one = { includes = [ aspects.two ]; classOne.bar = [ "1" ]; };
+  two = {
+    includes = [ aspects.two._.three-and-four ];
+    classOne.bar = [ "2" ];
+    provides = { aspects, ... }: {
+      three-and-four = {
+        classOne.bar = [ "3" ];
+        includes = [ aspects.four ];
+      };
+      four.classOne.bar = [ "4" ];
+    };
+  };
+};
+```
+
+Resolving `one` for `classOne` collects `["1", "2", "3", "4"]`.
+
+<Aside>
+  Test: [`aspect_fixpoint.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_fixpoint.nix) — tests five-level transitive resolution.
+</Aside>
+
+## Inline aspects as includes
+
+`includes` entries don't have to be references to named aspects. They can be inline aspect attrsets:
+
+```nix
+server.includes = [
+  { nixos = { services.sshd.enable = true; }; }
+];
+```
+
+Or context-aware providers:
+
+```nix
+server.includes = [
+  ({ class, aspect-chain }: {
+    ${class}.tag = "included-by-${(lib.last aspect-chain).name}";
+  })
+];
+```

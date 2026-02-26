@@ -1,0 +1,81 @@
+---
+title: Providers & Fixpoint
+description: Nested sub-aspects, fixpoint semantics, and the provides/_ shorthand.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## `provides` and `_`
+
+Aspects can expose sub-aspects through the `provides` attribute. The `_` attribute is a shorthand alias.
+
+```nix
+flake.aspects = { aspects, ... }: {
+  gaming = {
+    nixos = { };
+    provides.emulation = {
+      nixos = { };
+      _.nes.nixos = { };  # _ is alias for provides
+    };
+  };
+  my-host.includes = [ aspects.gaming._.emulation._.nes ];
+};
+```
+
+Each entry in `provides` is itself an aspect — it has its own `name`, `includes`, class configs, and can nest further.
+
+Providers that are functions receive `{ class, aspect-chain }`:
+
+```nix
+provides.logging = { class, aspect-chain }: {
+  ${class}.enableLogging = true;
+};
+```
+
+<Aside>
+  Test: [`aspect_provides.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_provides.nix)
+</Aside>
+
+## Fixpoint semantics
+
+Both the top-level `flake.aspects` and each `provides` submodule receive an `aspects` argument — a fixpoint of their sibling scope. This means:
+
+- **Top-level aspects** can reference each other: `aspects.foo`, `aspects.bar`.
+- **Providers** can reference siblings: `aspects.sibling` within the same `provides` block.
+- **Providers** can reference top-level aspects via closure.
+
+```nix
+flake.aspects = { aspects, ... }: {
+  two.provides = { aspects, ... }: {
+    sub = {
+      classOne = { };
+      includes = [ aspects.sibling ];
+    };
+    sibling.classOne = { };
+  };
+  five.classOne = { };
+  one.includes = [
+    aspects.two._.sub    # reaches into two's providers
+  ];
+};
+```
+
+The fixpoint is implemented via `freeformType` with `_module.args.aspects = config` in [types.nix](https://github.com/vic/flake-aspects/blob/main/nix/types.nix), so `aspects` always refers to the evaluated sibling scope.
+
+<Aside>
+  Test: [`aspect_fixpoint.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_fixpoint.nix) — resolves aspects from five levels: top-level `aspects.five`, provider-local `aspects.four`, and cross-scope `aspects.two._.sub`.
+</Aside>
+
+## Provider types
+
+The type system ([`nix/types.nix`](https://github.com/vic/flake-aspects/blob/main/nix/types.nix)) accepts several provider shapes:
+
+| Shape | Description |
+|---|---|
+| Aspect attrset | Direct `{ classX = ...; includes = [...]; }` |
+| `{ class, aspect-chain } → aspect` | Context-aware provider |
+| `{ class } → aspect` | Provider needing only class |
+| `{ aspect-chain } → aspect` | Provider needing only chain |
+| `args → provider` | Curried — parametric (see [guide](/guides/parametric/)) |
+
+All of these can appear in `includes` or as `provides` entries. The type system distinguishes them via `isProviderFn` and `isSubmoduleFn` checks.

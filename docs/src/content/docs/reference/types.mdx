@@ -1,0 +1,76 @@
+---
+title: Type System
+description: The Nix option types that validate aspect definitions.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Source: [`nix/types.nix`](https://github.com/vic/flake-aspects/blob/main/nix/types.nix)
+
+## Exported types
+
+| Type | Purpose |
+|---|---|
+| `aspectsType` | Top-level container for all aspects. Used as the type for `flake.aspects`. |
+| `aspectSubmodule` | Individual aspect definition with class configs, includes, provides. |
+| `providerType` | Union of all valid provider shapes (functions and aspect attrsets). |
+
+## `aspectsType`
+
+A `submodule` with `freeformType = lazyAttrsOf (either aspectSubmodule providerType)`.
+
+Provides a fixpoint: `_module.args.aspects = config` — so aspect definitions can reference siblings via the `aspects` argument.
+
+```nix
+flake.aspects = { aspects, ... }: {
+  a.includes = [ aspects.b ];
+  b.nixos = { };
+};
+```
+
+Top-level entries can be either `aspectSubmodule` values (with submodule-style function args like `{ lib, config, options, aspect }`) or `providerType` values (curried or direct provider functions).
+
+## `aspectSubmodule`
+
+A `submodule` defining a single aspect. Key options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `name` | `str` | attribute name | Aspect name, auto-set |
+| `description` | `str` | `"Aspect ${name}"` | Human description |
+| `includes` | `listOf providerType` | `[]` | Dependency providers |
+| `provides` / `_` | `submodule` (freeform) | `{}` | Nested sub-aspects |
+| `__functor` | `self → context → provider` | identity | Override resolution behavior |
+| `resolve` | internal | — | `{ class, aspect-chain? } → module` |
+| `modules` | internal | — | `{ <class> = module }` lazy attrset |
+
+The `freeformType = lazyAttrsOf deferredModule` means any key not listed above is treated as a class name with a deferred module value.
+
+`_` is an alias for `provides` (via `mkAliasOptionModule`).
+
+The `provides` submodule also receives a fixpoint: `_module.args.aspects = config` — providers can reference siblings.
+
+## `providerType`
+
+A union type covering all valid provider shapes:
+
+```
+providerType = either providerFn aspectSubmodule
+```
+
+Where `providerFn = either directProviderFn curriedProviderFn`:
+
+- **`directProviderFn`**: a function whose args are exactly `{ class }`, `{ aspect-chain }`, or `{ class, aspect-chain }`.
+- **`curriedProviderFn`**: any other function that returns a `providerType`.
+
+The distinction is made by `isProviderFn` which inspects `functionArgs`:
+- If the function takes exactly `class` and/or `aspect-chain` (and nothing else), it's a direct provider.
+- Otherwise, it's treated as curried — the user must call it with arguments first.
+
+## Internal types
+
+| Type | Purpose |
+|---|---|
+| `ignoredType` | For computed values that only exist during evaluation. Merges to `null`. |
+| `mkInternal` | Helper to create internal, invisible, read-only options with an `apply` function. |
+| `isSubmoduleFn` | Checks if a function has submodule-style args (`lib`, `config`, `options`, `aspect`). |

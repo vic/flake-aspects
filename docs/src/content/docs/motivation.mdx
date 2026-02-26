@@ -1,0 +1,50 @@
+---
+title: Motivation
+description: Why flake-aspects exists.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## The problem
+
+In [Dendritic](https://github.com/mightyiam/dendritic) Nix setups, modules are organized as
+`flake.modules.<class>.<name>` — a flat, two-level structure where class comes first.
+
+This works well for consumers, but for *authors* it fragments a logical concern across
+multiple class namespaces. A "desktop" aspect touching `nixos`, `darwin`, and `homeManager`
+ends up as three separate entries under three different class keys.
+
+## The transposition idea
+
+[Unify](https://codeberg.org/quasigod/unify)'s author invented the `<aspect>.<class>` layout:
+group all class-specific configs under the aspect name, then transpose into the standard
+`<class>.<aspect>` output.
+
+**flake-aspects** implements this transposition as a small, dependency-free primitive.
+
+## Beyond transposition
+
+A flat transposition is not enough for real-world reusability. flake-aspects adds:
+
+- **`includes`** — declare dependencies between aspects, forming a DAG resolved recursively per class.
+- **`provides` / `_`** — nest sub-aspects in a tree, with fixpoint semantics so siblings can reference each other.
+- **Parametric providers** — curried functions that accept arguments at inclusion time.
+- **`__functor` override** — intercept inclusion and dispatch based on `{ class, aspect-chain }` context.
+- **`forward`** — route resolved modules from one class into a submodule of another (e.g., homeManager → nixos).
+- **`aspect-chain`** — the call stack of aspects during resolution, enabling context-aware decisions.
+
+All of this with zero dependencies beyond `lib`.
+
+## What flake-aspects is not
+
+flake-aspects is a **library**, not a framework. It does not:
+- Define hosts, users, or homes
+- Build `nixosConfigurations` or `darwinConfigurations`
+- Provide a context pipeline or entity schemas
+- Ship batteries or opinionated defaults
+
+For a framework built on flake-aspects, see [Den](https://github.com/vic/den).
+
+<Aside type="tip" icon="heart" title="Support development">
+[vic](https://bsky.app/profile/oeiuwq.bsky.social)'s [dendritic libs](https://vic.github.io/dendrix/Dendritic-Ecosystem.html#vics-dendritic-libraries) are made with Love++ and AI--. If you find them useful, consider [sponsoring](https://github.com/sponsors/vic).
+</Aside>

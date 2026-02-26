@@ -1,0 +1,77 @@
+---
+title: Test Suite
+description: All test files and how to run them.
+---
+
+## Running tests
+
+```shell
+# Format code
+nix run github:vic/checkmate#fmt --override-input target .
+
+# Run all tests
+nix flake check github:vic/checkmate --override-input target . -L
+```
+
+Tests use [checkmate](https://github.com/vic/checkmate) — each test defines `flake.tests.<name> = { expr, expected }`.
+
+## Test index
+
+### Transpose
+
+| Test | What it verifies |
+|---|---|
+| [`transpose_swap.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/transpose_swap.nix) | `{ a.b.c = 1 }` → `{ b.a.c = 1 }` |
+| [`transpose_common.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/transpose_common.nix) | Common children merge: `{ a.b, c.b }` → `{ b.{a,c} }` |
+| [`tranpose_flake_modules.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/tranpose_flake_modules.nix) | `flake.aspects` → `flake.modules` end-to-end |
+
+### Resolution & Dependencies
+
+| Test | What it verifies |
+|---|---|
+| [`aspect_dependencies.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_dependencies.nix) | `includes` resolves transitive deps per class |
+| [`aspect_chain.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_chain.nix) | `aspect-chain` grows correctly through resolution |
+| [`aspect_modules_resolved.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_modules_resolved.nix) | `.modules.<class>` matches `.resolve { class }` |
+| [`aspect_fixpoint.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_fixpoint.nix) | Fixpoint: providers reference siblings and top-level |
+
+### Providers
+
+| Test | What it verifies |
+|---|---|
+| [`aspect_provides.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_provides.nix) | `provides` / `_` with context-aware providers |
+| [`aspect_parametric.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_parametric.nix) | Curried provider in `provides` |
+| [`aspect_toplevel_parametric.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_toplevel_parametric.nix) | Curried top-level aspect |
+
+### Functor
+
+| Test | What it verifies |
+|---|---|
+| [`aspect_default_provider_functor.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_default_provider_functor.nix) | `__functor` override with parametric includes |
+| [`aspect_default_provider_override.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_default_provider_override.nix) | Functor replaces original config entirely |
+
+### Scopes & Standalone
+
+| Test | What it verifies |
+|---|---|
+| [`without_flakes.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/without_flakes.nix) | `new-scope` + `lib.evalModules` without flakes |
+| [`aspect_assignment.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_assignment.nix) | Multiple scopes merge correctly |
+| [`default_empty.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/default_empty.nix) | Empty `flake.aspects` produces empty `flake.modules` |
+
+### Forward
+
+| Test | What it verifies |
+|---|---|
+| [`forward.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/forward.nix) | Cross-class module forwarding |
+
+## Test harness
+
+The test infrastructure ([`checkmate/modules/tests.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests.nix)) provides:
+
+| Helper | Purpose |
+|---|---|
+| `mkFlake` | Creates a flake evaluation with aspects + test options pre-wired |
+| `evalMod` | Evaluates a module with `lib.evalModules` and returns `.config` |
+| `fooOpt` | Standard test options: `foo` (str), `bar` (listOf str), `baz` (attrsOf str) |
+| `transpose` | Direct access to the transpose function |
+| `new-scope` | Direct access for standalone tests |
+| `forward` | Direct access to the forward function |
