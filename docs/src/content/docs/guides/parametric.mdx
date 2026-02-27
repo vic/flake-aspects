@@ -1,0 +1,66 @@
+---
+title: Parametric Aspects
+description: Curried functions as configurable providers.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Provider-level parametric
+
+Providers inside `provides` can be curried functions. The outer function takes user arguments; the inner function (if needed) takes `{ class, aspect-chain }`:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  base.provides.user = userName: {
+    nixos.users.users.${userName}.isNormalUser = true;
+  };
+  server = {
+    includes = [ (aspects.base._.user "bob") ];
+    nixos = { };
+  };
+};
+```
+
+Resolving `server` for `"nixos"` produces imports containing `{ users.users.bob.isNormalUser = true; }`.
+
+<Aside>
+  Test: [`aspect_parametric.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_parametric.nix)
+</Aside>
+
+## Top-level parametric
+
+Top-level aspects can also be curried. The function takes named arguments and returns an aspect:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  greeter = { message }: {
+    nixos.greeting = message;
+  };
+  host = {
+    includes = [ (aspects.greeter { message = "hello"; }) ];
+    nixos = { };
+  };
+};
+```
+
+The type system ([`nix/types.nix`](https://github.com/vic/flake-aspects/blob/main/nix/types.nix)) distinguishes between:
+- **Direct providers**: `{ class, aspect-chain } → aspect` (1-2 named args: `class` and/or `aspect-chain`)
+- **Curried providers**: `anything → provider` (other function signatures)
+
+A curried provider is invoked by the user at inclusion time. Its return value must be either another provider function or a direct aspect attrset.
+
+<Aside>
+  Test: [`aspect_toplevel_parametric.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_toplevel_parametric.nix)
+</Aside>
+
+## Combining with context
+
+A parametric provider can return a context-aware function:
+
+```nix
+provides.themed = theme:
+  { class, aspect-chain }:
+  { ${class}.theme = "${theme}-for-${(lib.last aspect-chain).name}"; };
+```
+
+This is a three-level chain: user args → context → aspect config.

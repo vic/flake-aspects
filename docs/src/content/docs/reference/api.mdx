@@ -1,0 +1,89 @@
+---
+title: API Reference
+description: All exports from the flake-aspects library.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Entry points
+
+The flake exposes three entry points:
+
+```nix
+{
+  # Default functor: (lib) → { transpose, types, aspects, new, new-scope, forward }
+  __functor = _: import ./nix;
+
+  # flake-parts module: creates flake.aspects → flake.modules
+  flakeModule = ./nix/flakeModule.nix;
+
+  # Library API: (lib) → { transpose, types, aspects, new, new-scope, forward }
+  lib = import ./nix/lib.nix;
+}
+```
+
+Usage: `flake-aspects.lib nixpkgs.lib` or `import ./nix/lib.nix lib`.
+
+## Exports
+
+Source: [`nix/lib.nix`](https://github.com/vic/flake-aspects/blob/main/nix/lib.nix)
+
+### `transpose { emit? }`
+
+Source: [`nix/default.nix`](https://github.com/vic/flake-aspects/blob/main/nix/default.nix)
+
+Generic 2-level transposition. Returns a function `attrs → transposed-attrs`.
+
+| Parameter | Type | Default | Purpose |
+|---|---|---|---|
+| `emit` | `{ child, parent, value } → [{ parent, child, value }]` | `lib.singleton` | Hook for filtering, modifying, or multiplying items |
+
+See [Transpose concept](/concepts/transpose/).
+
+### `types`
+
+Source: [`nix/types.nix`](https://github.com/vic/flake-aspects/blob/main/nix/types.nix)
+
+Returns `{ aspectsType, aspectSubmodule, providerType }`.
+
+See [Type System reference](/reference/types/).
+
+### `aspects`
+
+Source: [`nix/aspects.nix`](https://github.com/vic/flake-aspects/blob/main/nix/aspects.nix)
+
+`aspects : lib → aspectsConfig → { transposed }`.
+
+Aspect-aware transposition. Supplies a custom `emit` to `transpose` that calls `resolve` on each item. Returns `{ transposed = { <class>.<aspect> = resolved-module; }; }`.
+
+### `new`
+
+Source: [`nix/new.nix`](https://github.com/vic/flake-aspects/blob/main/nix/new.nix)
+
+`new : lib → (option → transposed → moduleDefinition) → aspectsConfig → moduleDefinition`.
+
+Low-level scope factory. The callback receives:
+- `option` — an `mkOption` for `aspectsType` (the user-facing input)
+- `transposed` — the resolved `{ <class>.<aspect> }` output
+
+### `new-scope`
+
+Source: [`nix/new-scope.nix`](https://github.com/vic/flake-aspects/blob/main/nix/new-scope.nix)
+
+`new-scope : name → nixos-module`.
+
+Creates `${name}.aspects` (input) and `${name}.modules` (read-only output). Sugar over `new`. See [Standalone guide](/guides/standalone/).
+
+### `forward`
+
+Source: [`nix/forward.nix`](https://github.com/vic/flake-aspects/blob/main/nix/forward.nix)
+
+`forward : lib → { each, fromClass, intoClass, intoPath, fromAspect } → aspect`.
+
+Cross-class module forwarding. See [Forward guide](/guides/forward/).
+
+## `flakeModule`
+
+Source: [`nix/flakeModule.nix`](https://github.com/vic/flake-aspects/blob/main/nix/flakeModule.nix)
+
+A flake-parts module. Import it to get `flake.aspects` (input) → `flake.modules` (output). Uses `new` internally. See [flake-parts guide](/guides/flake-parts/).

@@ -1,0 +1,67 @@
+---
+title: __functor Override
+description: Override how an aspect behaves when included by others.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Default behavior
+
+Every aspect has a default `__functor` that, when the aspect is called as a function, returns itself ignoring the context:
+
+```nix
+__functor = self: _context: self;
+```
+
+This means when aspect `A` appears in another's `includes`, resolution calls `A { class, aspect-chain }` which just returns `A` unchanged — so all of `A`'s class configs and nested includes get resolved normally.
+
+## Overriding `__functor`
+
+Replace `__functor` to intercept inclusion. The functor receives `self` (the attrset) and must return a function `{ class, aspect-chain } → aspect`:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  adaptable = {
+    nixos.base = true;
+    __functor = self: { class, aspect-chain }:
+      if class == "nixos" then self
+      else { darwin.fallback = true; };
+  };
+};
+```
+
+When resolved for `"nixos"`, it returns the full aspect (with `nixos.base = true`).
+When resolved for `"darwin"`, it returns a different aspect with `darwin.fallback = true`.
+
+<Aside>
+  Test: [`aspect_default_provider_functor.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_default_provider_functor.nix)
+</Aside>
+
+## Functor with parametric includes
+
+A common pattern: the functor intercepts `includes` to inject arguments before delegating:
+
+```nix
+flake.aspects = { aspects, ... }: {
+  wrapper = {
+    includes = [ aspects.tool ];
+    __functor = self: {
+      includes = [
+        { classOne.bar = [ "from-functor" ]; }
+      ] ++ map (f: f { message = "hello"; }) self.includes;
+    };
+  };
+  tool = { message }: {
+    classOne.bar = [ message ];
+  };
+};
+```
+
+Here `wrapper.__functor` transforms each include by calling it with `{ message = "hello"; }` before resolution.
+
+Note: when `__functor` is overridden, the aspect's own class configs (e.g., `classOne.bar = [ "should-not-be-present" ]`)
+are **not** automatically included — the functor's return value replaces the aspect entirely during resolution.
+
+<Aside>
+  Test: [`aspect_default_provider_override.nix`](https://github.com/vic/flake-aspects/blob/main/checkmate/modules/tests/aspect_default_provider_override.nix) — demonstrates that functor return replaces the original aspect config.
+</Aside>
