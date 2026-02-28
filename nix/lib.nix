@@ -3,7 +3,7 @@
 lib:
 let
   # Type system: aspectsType, aspectSubmodule, providerType
-  types = import ./types.nix lib;
+  types = import ./types.nix lib "aspects";
 
   # Generic transposition utility: parameterized by emit function
   transpose =
@@ -18,7 +18,7 @@ let
   # Dynamic class forwarding into submodules
   forward = import ./forward.nix lib;
 
-  # Low-level scope factory: parameterized by callback
+  # Low-level scope factory: parameterized by namespace and callback
   new = import ./new.nix lib;
 
   # High-level named scope factory

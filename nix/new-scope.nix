@@ -3,7 +3,7 @@
 new: name:
 { config, lib, ... }:
 # Invoke new() to create ${name}.aspects and ${name}.modules
-new (option: transposed: {
+new "${name}.aspects" (option: transposed: {
   options.${name} = {
     # User-facing aspects input
     aspects = option;

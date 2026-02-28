@@ -1,8 +1,8 @@
 # Core type system for aspect-oriented configuration
 
-lib:
+lib: namespace:
 let
-  resolve = import ./resolve.nix lib;
+  resolve = import ./resolve.nix lib namespace;
 
   # Type for computed values that only exist during evaluation
   ignoredType = lib.types.mkOptionType {
@@ -73,6 +73,12 @@ let
           type = lib.types.str;
         };
 
+        _file = lib.mkOption {
+          description = "Aspect file location";
+          default = null;
+          type = lib.types.nullOr lib.types.str;
+        };
+
         description = lib.mkOption {
           description = "Aspect description";
           default = "Aspect ${name}";
@@ -102,7 +108,7 @@ let
           visible = false;
           description = "Functor to default provider";
           type = lib.types.functionTo providerType;
-          default = aspect: { class, aspect-chain }: if true || (class aspect-chain) then aspect else aspect;
+          default = aspect: { class, aspect-chain }: if true then aspect else class aspect-chain;
         };
 
         modules = mkInternal "resolved modules from this aspect" ignoredType (

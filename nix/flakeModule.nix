@@ -7,7 +7,7 @@
   ...
 }:
 # Invoke new() factory to create flake.aspects and flake.modules
-import ./new.nix lib (option: transposed: {
+import ./new.nix lib "flake.aspects" (option: transposed: {
   # User-facing aspects input
   options.flake.aspects = option;
 
