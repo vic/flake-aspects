@@ -46,7 +46,11 @@ let
   directProviderFn = lib.types.addCheck (lib.types.functionTo aspectSubmodule) isProviderFn;
 
   # Curried provider function: (params) → provider (enables parametrization)
-  curriedProviderFn = lib.types.functionTo providerType;
+  curriedProviderFn = lib.types.addCheck (lib.types.functionTo providerType) (
+    f:
+    builtins.isFunction f
+    || lib.isAttrs f && lib.subtractLists [ "__functor" "__functionArgs" ] (lib.attrNames f) == [ ]
+  );
 
   # Any provider function: direct or curried
   providerFn = lib.types.either directProviderFn curriedProviderFn;
