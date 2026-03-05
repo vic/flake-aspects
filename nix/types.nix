@@ -24,6 +24,35 @@ let
       apply = fn;
     };
 
+  # Like lib.types.functionTo, but it does not merges all definitions, and keeps
+  # just the last one.
+  functorType = lib.mkOptionType {
+    name = "aspectFunctor";
+    description = "aspect functor function";
+    check = lib.isFunction;
+    merge =
+      loc: defs:
+      let
+        # Use only the last definition to avoid duplication from
+        # functionTo merging all definitions with the same args.
+        # All definitions receive the same merged `self`, so they
+        # produce equivalent results - picking one is correct.
+        lastDef = lib.last defs;
+        innerType = providerType;
+      in
+      {
+        __functionArgs = lib.functionArgs lastDef.value;
+        __functor =
+          _: callerArgs:
+          (lib.modules.mergeDefinitions (loc ++ [ "<function body>" ]) innerType [
+            {
+              inherit (lastDef) file;
+              value = lastDef.value callerArgs;
+            }
+          ]).mergedValue;
+      };
+  };
+
   # Check if function has submodule-style arguments
   isSubmoduleFn =
     m:
@@ -101,7 +130,7 @@ let
           internal = true;
           visible = false;
           description = "Functor to default provider";
-          type = lib.types.functionTo providerType;
+          type = functorType;
           default = aspect: { class, aspect-chain }: if true || (class aspect-chain) then aspect else aspect;
         };
 
