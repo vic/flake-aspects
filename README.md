@@ -79,44 +79,8 @@ This project provides a small, dependency-free [`transpose`](nix/default.nix) pr
 
 Unlike `flake.modules.<class>.<aspect>` which is _flat_, aspects form a _tree_ via `provides` (alias: `_`) and a _graph_ via `includes`.
 
----
-
-## Quick Start
-
-```nix
-# flake.nix
-{
-  inputs.flake-aspects.url = "github:vic/flake-aspects";
-  outputs = { flake-parts, flake-aspects, nixpkgs, ... }@inputs:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ flake-aspects.flakeModule ];
-      flake.aspects = { aspects, ... }: {
-        my-desktop = {
-          nixos  = { };
-          darwin = { };
-          includes = [ aspects.my-tools ];
-        };
-        my-tools.nixos = { };
-      };
-    };
-}
-```
-
 Also works [without flakes](checkmate/modules/tests/without_flakes.nix) via `new-scope` and `lib.evalModules`.
 
 ## Documentation
 
 **[Full documentation](https://flake-aspects.oeiuwq.com)**
-
-| Section                                                             | Content                                                             |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [Concepts](https://vic.github.io/flake-aspects/concepts/transpose/) | Transpose, resolution algorithm, providers & fixpoint               |
-| [Guides](https://vic.github.io/flake-aspects/guides/flake-parts/)   | flake-parts, standalone, dependencies, parametric, functor, forward |
-| [Reference](https://vic.github.io/flake-aspects/reference/api/)     | API exports, type system, test suite                                |
-
-## Testing
-
-```shell
-nix run github:vic/checkmate#fmt --override-input target .
-nix flake check github:vic/checkmate --override-input target . -L
-```
