@@ -60,100 +60,111 @@ let
     || (args ? class && args ? aspect-chain && n == 2);
 
   # Direct provider function: ({ class, aspect-chain }) → aspect
-  directProviderFn = lib.types.addCheck (lib.types.functionTo aspectSubmodule) isProviderFn;
+  directProviderFn =
+    cnf: lib.types.addCheck (lib.types.functionTo (aspectSubmodule cnf)) isProviderFn;
 
   # Curried provider function: (params) → provider (enables parametrization)
-  curriedProviderFn = lib.types.addCheck (lib.types.functionTo providerType) (
-    f:
-    builtins.isFunction f
-    || lib.isAttrs f && lib.subtractLists [ "__functor" "__functionArgs" ] (lib.attrNames f) == [ ]
-  );
+  curriedProviderFn =
+    cnf:
+    lib.types.addCheck (lib.types.functionTo (providerType cnf)) (
+      f:
+      builtins.isFunction f
+      || lib.isAttrs f && lib.subtractLists [ "__functor" "__functionArgs" ] (lib.attrNames f) == [ ]
+    );
 
   # Any provider function: direct or curried
-  providerFn = lib.types.either directProviderFn curriedProviderFn;
+  providerFn = cnf: lib.types.either (directProviderFn cnf) (curriedProviderFn cnf);
 
   # Provider type: function or aspect that can provide configurations
-  providerType = lib.types.either providerFn aspectSubmodule;
+  providerType = cnf: lib.types.either (providerFn cnf) (aspectSubmodule cnf);
 
   # Core aspect submodule with all aspect properties
-  aspectSubmodule = lib.types.submodule (
-    { name, config, ... }:
-    {
-      freeformType = lib.types.lazyAttrsOf lib.types.deferredModule;
-      config._module.args.aspect = config;
-      imports = [ (lib.mkAliasOptionModule [ "_" ] [ "provides" ]) ];
+  aspectSubmodule =
+    cnf:
+    lib.types.submodule (
+      { name, config, ... }:
+      {
+        freeformType = lib.types.lazyAttrsOf lib.types.deferredModule;
+        config._module.args.aspect = config;
+        imports = [ (lib.mkAliasOptionModule [ "_" ] [ "provides" ]) ];
 
-      options = {
-        name = lib.mkOption {
-          description = "Aspect name";
-          default = name;
-          type = lib.types.str;
-        };
+        options = {
+          name = lib.mkOption {
+            description = "Aspect name";
+            default = name;
+            type = lib.types.str;
+          };
 
-        description = lib.mkOption {
-          description = "Aspect description";
-          default = "Aspect ${name}";
-          type = lib.types.str;
-        };
+          description = lib.mkOption {
+            description = "Aspect description";
+            default = "Aspect ${name}";
+            type = lib.types.str;
+          };
 
-        includes = lib.mkOption {
-          description = "Providers to ask aspects from";
-          type = lib.types.listOf providerType;
-          default = [ ];
-        };
+          includes = lib.mkOption {
+            description = "Providers to ask aspects from";
+            type = lib.types.listOf (providerType cnf);
+            default = [ ];
+          };
 
-        provides = lib.mkOption {
-          description = "Providers of aspect for other aspects";
-          default = { };
-          type = lib.types.submodule (
-            { config, ... }:
+          provides = lib.mkOption {
+            description = "Providers of aspect for other aspects";
+            default = { };
+            type = lib.types.submodule (
+              { config, ... }:
+              {
+                freeformType = lib.types.lazyAttrsOf (providerType cnf);
+                config._module.args.aspects = config;
+              }
+            );
+          };
+
+          __functor = lib.mkOption {
+            internal = true;
+            visible = false;
+            description = "Functor to default provider";
+            type = functorType; # (providerType cnf);
+            default =
+              let
+                defaultFunctor = aspect: { class, aspect-chain }: if true then aspect else class aspect-chain;
+              in
+              cnf.defaultFunctor or defaultFunctor;
+          };
+
+          modules = mkInternal "resolved modules from this aspect" ignoredType (
+            _: lib.mapAttrs (class: _: config.resolve { inherit class; }) config
+          );
+
+          resolve = mkInternal "function to resolve a module from this aspect" ignoredType (
+            _:
             {
-              freeformType = lib.types.lazyAttrsOf providerType;
-              config._module.args.aspects = config;
-            }
+              class,
+              aspect-chain ? [ ],
+            }:
+            resolve class aspect-chain (config {
+              inherit class aspect-chain;
+            })
           );
         };
+      }
+    );
 
-        __functor = lib.mkOption {
-          internal = true;
-          visible = false;
-          description = "Functor to default provider";
-          type = functorType;
-          default = aspect: { class, aspect-chain }: if true || (class aspect-chain) then aspect else aspect;
-        };
-
-        modules = mkInternal "resolved modules from this aspect" ignoredType (
-          _: lib.mapAttrs (class: _: config.resolve { inherit class; }) config
+  # Top-level aspects container with fixpoint semantics
+  aspectsType =
+    cnf:
+    lib.types.submodule (
+      { config, ... }:
+      {
+        freeformType = lib.types.lazyAttrsOf (
+          lib.types.either (lib.types.addCheck (aspectSubmodule cnf) (
+            m: (!builtins.isFunction m) || isSubmoduleFn m
+          )) (providerType cnf)
         );
-
-        resolve = mkInternal "function to resolve a module from this aspect" ignoredType (
-          _:
-          {
-            class,
-            aspect-chain ? [ ],
-          }:
-          resolve class aspect-chain (config {
-            inherit class aspect-chain;
-          })
-        );
-      };
-    }
-  );
+        config._module.args.aspects = config;
+      }
+    );
 
 in
 {
-  # Top-level aspects container with fixpoint semantics
-  aspectsType = lib.types.submodule (
-    { config, ... }:
-    {
-      freeformType = lib.types.lazyAttrsOf (
-        lib.types.either (lib.types.addCheck aspectSubmodule (
-          m: (!builtins.isFunction m) || isSubmoduleFn m
-        )) providerType
-      );
-      config._module.args.aspects = config;
-    }
-  );
-
-  inherit aspectSubmodule providerType;
+  inherit aspectsType aspectSubmodule providerType;
 }
