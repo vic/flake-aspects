@@ -1,4 +1,3 @@
-lib:
 # An utility for creating new aspect configuration classes that
 # help with separation of concerns.
 #
@@ -39,6 +38,7 @@ lib:
 #
 # See checkmate/modules/tests/forward.nix for working example.
 #
+lib:
 {
   each,
   fromClass,
@@ -47,6 +47,7 @@ lib:
   fromAspect,
 }:
 let
+  resolve = import ./resolve.nix lib;
   include =
     item:
     let
@@ -54,7 +55,7 @@ let
       into = intoClass item;
       path = intoPath item;
       aspect = fromAspect item;
-      module = aspect.resolve { class = from; };
+      module = resolve from [ ] aspect;
       config = lib.setAttrByPath path (
         { ... }:
         {

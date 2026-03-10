@@ -1,10 +1,7 @@
-# Core type system for aspect-oriented configuration
-
 lib:
 let
   resolve = import ./resolve.nix lib;
 
-  # Type for computed values that only exist during evaluation
   ignoredType = lib.types.mkOptionType {
     name = "ignored type";
     description = "ignored values";
@@ -24,48 +21,39 @@ let
       apply = fn;
     };
 
-  # Like lib.types.functionTo, but it does not merges all definitions, and keeps
-  # just the last one.
-  functorType = lib.mkOptionType {
+  functorType = lib.types.mkOptionType {
     name = "aspectFunctor";
     description = "aspect functor function";
     check = lib.isFunction;
     merge =
-      loc: defs:
+      _loc: defs:
       let
-        # Use only the last definition to avoid duplication from
-        # functionTo merging all definitions with the same args.
-        # All definitions receive the same merged `self`, so they
-        # produce equivalent results - picking one is correct.
         lastDef = lib.last defs;
-        innerType = providerType;
       in
       {
         __functionArgs = lib.functionArgs lastDef.value;
         __functor =
           _: callerArgs:
-          (lib.modules.mergeDefinitions (loc ++ [ "<function body>" ]) innerType [
-            {
-              inherit (lastDef) file;
-              value = lastDef.value callerArgs;
-            }
-          ]).mergedValue;
+          let
+            result = lastDef.value callerArgs;
+          in
+          if builtins.isFunction result then result else _: result;
       };
   };
 
-  # Check if function has submodule-style arguments
   isSubmoduleFn =
     m:
-    lib.length (
-      lib.intersectLists [ "lib" "config" "options" "aspect" ] (lib.attrNames (lib.functionArgs m))
-    ) > 0;
+    let
+      args = lib.functionArgs m;
+    in
+    args ? lib || args ? config || args ? options || args ? aspect;
 
   # Check if function accepts { class } and/or { aspect-chain }
   isProviderFn =
     f:
     let
       args = lib.functionArgs f;
-      n = lib.length (lib.attrNames args);
+      n = builtins.length (builtins.attrNames args);
     in
     (args ? class && n == 1)
     || (args ? aspect-chain && n == 1)

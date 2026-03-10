@@ -1,18 +1,13 @@
-# Core aspect resolution algorithm
-# Resolves aspect definitions into nixpkgs modules with dependency resolution
-
 lib:
 let
-  # Process a single provider: invoke with context and resolve
   include =
     class: aspect-chain: provider:
     let
-      provided = provider { inherit aspect-chain class; };
+      provided = if lib.isFunction provider then provider { inherit aspect-chain class; } else provider;
     in
-    resolve class aspect-chain provided;
+    inner class aspect-chain provided;
 
-  # Main resolution: extract class config and recursively resolve includes
-  resolve = class: aspect-chain: provided: {
+  inner = class: aspect-chain: provided: {
     imports =
       let
         config = provided.${class} or { };
@@ -24,5 +19,18 @@ let
       ];
   };
 
+  resolve =
+    class: aspect-chain: aspect:
+    let
+      provided =
+        if lib.isFunction aspect then
+          aspect {
+            inherit class;
+            aspect-chain = aspect-chain;
+          }
+        else
+          aspect;
+    in
+    inner class aspect-chain provided;
 in
 resolve
