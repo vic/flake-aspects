@@ -12,7 +12,7 @@ let
   option = lib.mkOption {
     default = { };
     description = "Aspect definitions organized as <aspect>.<class>";
-    type = types.aspectsType;
+    type = types.aspectsType { };
   };
 in
 # Invoke callback with option and transposed results
