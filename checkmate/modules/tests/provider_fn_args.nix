@@ -17,7 +17,9 @@
     in
     {
       expr = lib.functionArgs provider;
-      expected = { who = false; };
+      expected = {
+        who = false;
+      };
     };
 
   flake.tests."test provider functionArgs preserved in includes" =
@@ -42,7 +44,9 @@
     in
     {
       expr = lib.functionArgs fn;
-      expected = { who = false; };
+      expected = {
+        who = false;
+      };
     };
 
   flake.tests."test provider functionArgs survives double eval" =
@@ -62,6 +66,8 @@
     in
     {
       expr = lib.functionArgs provider2;
-      expected = { who = false; };
+      expected = {
+        who = false;
+      };
     };
 }
